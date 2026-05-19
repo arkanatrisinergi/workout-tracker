@@ -1,3 +1,8 @@
+/**
+ * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.6
+ * FITUR: Simplifikasi Ekstraksi Jam Favorit (Solusi Fix 00:00 / Detik Google Sheets)
+ */
+
 const State = {
     currentUser: localStorage.getItem('activeUser') || null,
     currentTab: 'home',
@@ -102,7 +107,7 @@ const App = {
         } else {
             DOM.viewHome.classList.remove('active-view');
             DOM.viewProgress.classList.add('active-view');
-            DOM.navHome.classList.remove('active-nav');
+            DOM.navHome.classList.add('active-nav');
             DOM.navprogress.classList.remove('active-nav');
         }
     },
@@ -161,26 +166,30 @@ const App = {
         const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
-        // Ekstraksi Jam Terfavorit yang Toleran pasca perbaikan kolom
+        // ========================================================
+        // 🚀 RESTRUKTURISASI TOTAL: KALKULASI JAM FAVORIT PRESISI
+        // ========================================================
         const hoursList = monthlyData
-            .filter(entry => entry.workoutTime)
+            .filter(entry => entry.workoutTime && entry.workoutTime !== "00:00")
             .map(entry => {
-                let timeStr = String(entry.workoutTime).trim().replace('.', ':');
-                const match = timeStr.match(/^(\d{1,2})/);
-                if (match) {
-                    const hourNum = parseInt(match[1], 10);
+                // Ambil karakter angka sebelum tanda pisah pertama (baik itu ":" maupun ".")
+                const rawTime = String(entry.workoutTime).trim().replace('.', ':');
+                const hourPart = rawTime.split(':')[0];
+                
+                if (hourPart !== "" && !isNaN(hourPart)) {
+                    const hourNum = parseInt(hourPart, 10);
                     if (hourNum >= 0 && hourNum <= 23) {
                         return `${String(hourNum).padStart(2, '0')}:00`;
                     }
                 }
                 return null;
             })
-            .filter(hr => hr !== null && hr !== "23:00");
+            .filter(hr => hr !== null && hr !== "23:00"); // Kebijakan sterilisasi jam fiktif server
 
         if (hoursList.length > 0) {
             const frequencyMap = {};
             let maxFreq = 0;
-            let peakHour = "-- : --";
+            let peakHour = "--:--";
             
             hoursList.forEach(hr => {
                 frequencyMap[hr] = (frequencyMap[hr] || 0) + 1;
@@ -191,21 +200,12 @@ const App = {
             });
             DOM.mPeakTime.innerText = `${peakHour} WIB`;
         } else {
-            // Fallback back-up jika pemfilteran mendeteksi anomali format
-            const rawHoursList = monthlyData
-                .map(entry => String(entry.workoutTime).split(':')[0])
-                .filter(hr => hr && !isNaN(hr));
-                
-            if (rawHoursList.length > 0) {
-                const hrObject = {};
-                rawHoursList.forEach(h => hrObject[h] = (hrObject[h] || 0) + 1);
-                const sorted = Object.keys(hrObject).sort((a,b) => hrObject[b] - hrObject[a]);
-                DOM.mPeakTime.innerText = `${sorted[0].padStart(2, '0')}:00 WIB`;
-            } else {
-                DOM.mPeakTime.innerText = `-- : --`;
-            }
+            DOM.mPeakTime.innerText = `--:--`;
         }
 
+        // ========================================================
+        // KALKULASI STREAK & STATUS CHECK-IN HARIAN
+        // ========================================================
         const allCheckedDates = [...new Set(cleanHistory
             .filter(entry => entry.userName === State.currentUser)
             .map(entry => {
