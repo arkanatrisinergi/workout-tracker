@@ -139,7 +139,7 @@
         .m-value { font-size: 18px; font-weight: 800; color: #fff; margin-top: 6px; }
         .m-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
 
-        /* 🗓️ 3. CALENDAR CONTRIBUTION VIEW (RESPONSIVE FIX) */
+        /* 🗓️ 3. CALENDAR CONTRIBUTION VIEW */
         .calendar-wrap {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -314,7 +314,6 @@
                 <div class="profile-role">Klik untuk langsung masuk</div>
             </div>
         </div>
-        <!-- App version is now moved exclusively here -->
         <div class="version-tag" id="app-version">v0.0.0</div>
     </div>
 
@@ -402,8 +401,8 @@
         <label>Durasi Sesi Latihan (Menit)</label>
         <input type="number" id="input-duration" inputmode="numeric" placeholder="Contoh: 45">
     </div>
-    <!-- FIXED: Triggering correct javascript function handleCheckIn -->
-    <button class="main-btn" onclick="App.handleCheckIn()">Simpan Laporan</button>
+    <!-- UPDATE COPY: Change text to "Check In" -->
+    <button class="main-btn" onclick="App.handleCheckIn()">Check In</button>
     <button class="secondary-btn" onclick="App.closeBottomSheet()">Batal</button>
 </div>
 

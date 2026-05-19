@@ -143,7 +143,10 @@ const App = {
         const targetMonth = new Date().getMonth();
         const targetYear = new Date().getFullYear();
 
-        const monthlyData = State.historyData.filter(entry => {
+        // VALIDASI PROTEKSI: Bersihkan baris aneh/kosong bawaan google sheets sebelum masuk kalkulasi
+        const cleanHistory = State.historyData.filter(entry => entry && entry.userName && entry.workoutDate);
+
+        const monthlyData = cleanHistory.filter(entry => {
             const d = new Date(entry.workoutDate);
             return entry.userName === State.currentUser && 
                    d.getMonth() === targetMonth && 
@@ -159,18 +162,21 @@ const App = {
         const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
-        // FIXED: Parsing regex cerdas untuk membersihkan tanggal purba Google Sheets 1899-12-29T
+        // FILTER ANTI-1899: Mengisolasi jam favorit dari data rusak sistem Sheets
         const hoursList = monthlyData
             .filter(entry => entry.workoutTime)
             .map(entry => {
-                let timeStr = String(entry.workoutTime);
-                // Jika mengandung format datetime lengkap '1899-12-29T23:00', ambil bagian jamnya saja
+                let timeStr = String(entry.workoutTime).trim();
                 if (timeStr.includes('T')) {
                     timeStr = timeStr.split('T')[1];
                 }
-                const hour = timeStr.split(':')[0];
-                return `${hour.padStart(2, '0')}:00`;
-            });
+                const parts = timeStr.split(':');
+                if(parts.length >= 2) {
+                    return `${parts[0].padStart(2, '0')}:00`;
+                }
+                return null;
+            })
+            .filter(hr => hr !== null && hr !== "23:00"); // Mengabaikan nilai default error sistem
 
         if (hoursList.length > 0) {
             const frequencyMap = {};
@@ -189,7 +195,7 @@ const App = {
             DOM.mPeakTime.innerText = `-- : --`;
         }
 
-        const allCheckedDates = [...new Set(State.historyData
+        const allCheckedDates = [...new Set(cleanHistory
             .filter(entry => entry.userName === State.currentUser)
             .map(entry => entry.workoutDate.split('T')[0]))]
             .sort((a, b) => new Date(b) - new Date(a));
@@ -254,6 +260,7 @@ const App = {
 
         const checkedDays = State.historyData
             .filter(entry => {
+                if(!entry || !entry.workoutDate) return false;
                 const d = new Date(entry.workoutDate);
                 return entry.userName === State.currentUser && d.getMonth() === month && d.getFullYear() === year;
             })
@@ -274,7 +281,6 @@ const App = {
         }
     },
 
-    // FIXED: Renamed function back to handleCheckIn to match index.html's onclick caller
     async handleCheckIn() {
         const dateVal = DOM.inputDate.value;
         const timeVal = DOM.inputTime.value;
@@ -285,7 +291,8 @@ const App = {
             return;
         }
 
-        DOM.bottomSheet.innerHTML = `<div style="text-align:center; padding: 40px 0;"><p style="color:var(--text-muted); font-style:italic;">Mengirim laporan ke satelit database...</p></div>`;
+        // UPDATE COPY: Minimalist screen loading indicator
+        DOM.bottomSheet.innerHTML = `<div style="text-align:center; padding: 40px 0;"><p style="color:white; font-weight:600;">Menyimpan...</p></div>`;
         
         try {
             await ApiService.checkIn(State.currentUser, dateVal, timeVal, durationVal);
