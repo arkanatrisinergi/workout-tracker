@@ -1,6 +1,6 @@
 /**
- * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.6
- * FITUR: Simplifikasi Ekstraksi Jam Favorit (Solusi Fix 00:00 / Detik Google Sheets)
+ * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.7
+ * FITUR: Perbaikan Total Navigasi Stuck & Proteksi Sandbox pada Kalkulasi Jam Favorit
  */
 
 const State = {
@@ -65,6 +65,14 @@ const App = {
         DOM.fabBtn.addEventListener('click', () => this.openBottomSheet());
         DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
         DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
+        
+        // 🚀 PERBAIKAN NAVIGASI: Pasang Event Listener Klik Menu Bawah
+        if (DOM.navHome) {
+            DOM.navHome.addEventListener('click', () => this.switchTab('home'));
+        }
+        if (DOM.navprogress) {
+            DOM.navprogress.addEventListener('click', () => this.switchTab('progress'));
+        }
     },
 
     showToast(message, isError = false) {
@@ -99,7 +107,7 @@ const App = {
         if (State.currentTab === tabName) return;
         State.currentTab = tabName;
         
-        if(tabName === 'home') {
+        if (tabName === 'home') {
             DOM.viewHome.classList.add('active-view');
             DOM.viewProgress.classList.remove('active-view');
             DOM.navHome.classList.add('active-nav');
@@ -107,8 +115,8 @@ const App = {
         } else {
             DOM.viewHome.classList.remove('active-view');
             DOM.viewProgress.classList.add('active-view');
-            DOM.navHome.classList.add('active-nav');
-            DOM.navprogress.classList.remove('active-nav');
+            DOM.navHome.classList.remove('active-nav');
+            DOM.navprogress.classList.add('active-nav');
         }
     },
 
@@ -140,6 +148,7 @@ const App = {
             this.calculateAdvancedMetrics();
             this.renderCalendar();
         } catch (err) {
+            console.error("Error global loadDashboardData:", err);
             this.showToast("Gagal memuat histori data.", true);
         }
     },
@@ -167,40 +176,61 @@ const App = {
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
         // ========================================================
-        // 🚀 RESTRUKTURISASI TOTAL: KALKULASI JAM FAVORIT PRESISI
+        // 🚀 RESTRUKTURISASI AMAN (SANDBOX MODE): KALKULASI JAM FAVORIT
         // ========================================================
-        const hoursList = monthlyData
-            .filter(entry => entry.workoutTime && entry.workoutTime !== "00:00")
-            .map(entry => {
-                // Ambil karakter angka sebelum tanda pisah pertama (baik itu ":" maupun ".")
-                const rawTime = String(entry.workoutTime).trim().replace('.', ':');
-                const hourPart = rawTime.split(':')[0];
-                
-                if (hourPart !== "" && !isNaN(hourPart)) {
-                    const hourNum = parseInt(hourPart, 10);
-                    if (hourNum >= 0 && hourNum <= 23) {
-                        return `${String(hourNum).padStart(2, '0')}:00`;
-                    }
-                }
-                return null;
-            })
-            .filter(hr => hr !== null && hr !== "23:00"); // Kebijakan sterilisasi jam fiktif server
+        DOM.mPeakTime.innerText = "--:--"; // Reset nilai awal aman
 
-        if (hoursList.length > 0) {
-            const frequencyMap = {};
-            let maxFreq = 0;
-            let peakHour = "--:--";
-            
-            hoursList.forEach(hr => {
-                frequencyMap[hr] = (frequencyMap[hr] || 0) + 1;
-                if (frequencyMap[hr] > maxFreq) {
-                    maxFreq = frequencyMap[hr];
-                    peakHour = hr;
+        try {
+            const hoursList = monthlyData
+                .filter(entry => entry.workoutTime)
+                .map(entry => {
+                    let timeStr = String(entry.workoutTime).trim().replace('.', ':');
+                    
+                    // Ambil angka depan sebelum tanda titik dua pertama (eg. "7:30:00" -> "7")
+                    const hourPart = timeStr.split(':')[0];
+                    
+                    if (hourPart !== "" && !isNaN(hourPart)) {
+                        const hourNum = parseInt(hourPart, 10);
+                        if (hourNum >= 0 && hourNum <= 23) {
+                            return `${String(hourNum).padStart(2, '0')}:00`;
+                        }
+                    }
+                    return null;
+                })
+                .filter(hr => hr !== null && hr !== "23:00" && hr !== "00:00");
+
+            if (hoursList.length > 0) {
+                const frequencyMap = {};
+                let maxFreq = 0;
+                let peakHour = "--:--";
+                
+                hoursList.forEach(hr => {
+                    frequencyMap[hr] = (frequencyMap[hr] || 0) + 1;
+                    if (frequencyMap[hr] > maxFreq) {
+                        maxFreq = frequencyMap[hr];
+                        peakHour = hr;
+                    }
+                });
+                DOM.mPeakTime.innerText = `${peakHour} WIB`;
+            } else {
+                // Jika tidak ada data jam yang cocok karena terfilter, cari manual tanpa batas sterilisasi ketat
+                const backupHours = monthlyData
+                    .map(entry => {
+                        const hp = String(entry.workoutTime).split(':')[0];
+                        return (hp && !isNaN(hp)) ? parseInt(hp, 10) : null;
+                    })
+                    .filter(h => h !== null);
+
+                if (backupHours.length > 0) {
+                    const countObj = {};
+                    backupHours.forEach(h => countObj[h] = (countObj[h] || 0) + 1);
+                    const coreHour = Object.keys(countObj).sort((a,b) => countObj[b] - countObj[a])[0];
+                    DOM.mPeakTime.innerText = `${String(coreHour).padStart(2, '0')}:00 WIB`;
                 }
-            });
-            DOM.mPeakTime.innerText = `${peakHour} WIB`;
-        } else {
-            DOM.mPeakTime.innerText = `--:--`;
+            }
+        } catch (peakTimeError) {
+            // Jika ada format data ekstrim tak terduga, log error ke console tanpa menghentikan aplikasi
+            console.error("Kalkulasi jam terfavorit error terlokalisasi:", peakTimeError);
         }
 
         // ========================================================
