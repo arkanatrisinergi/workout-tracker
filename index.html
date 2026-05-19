@@ -30,22 +30,19 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        /* App Container Wrapper to simulate App Viewport */
         .app-container {
             width: 100%;
-            max-width: 412px; /* Standard Modern Smartphone Width */
+            max-width: 412px;
             background: var(--bg-main);
             position: relative;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
-            padding-bottom: 90px; /* Space for Bottom Nav and FAB */
+            padding-bottom: 95px; 
             box-sizing: border-box;
         }
 
-        /* ---------------------------------------------------- */
-        /* 🚪 1. PASSWORDLESS LOGIN SCREEN (OVERLAY LAYER)      */
-        /* ---------------------------------------------------- */
+        /* 🚪 1. PASSWORDLESS LOGIN SCREEN */
         .login-screen {
             position: fixed;
             top: 0;
@@ -65,8 +62,8 @@
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
 
-        .login-title h2 { margin: 0; font-size: 26px; font-weight: 800; color: #fff; }
-        .login-title p { color: var(--text-muted); font-size: 14px; margin: 8px 0 40px 0; }
+        .login-title h2 { margin: 0; font-size: 26px; font-weight: 800; color: #fff; text-align: center; }
+        .login-title p { color: var(--text-muted); font-size: 14px; margin: 8px 0 40px 0; text-align: center; }
 
         .profile-card {
             width: 100%;
@@ -87,9 +84,7 @@
         .profile-name { font-size: 18px; font-weight: 700; color: #fff; }
         .profile-role { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
-        /* ---------------------------------------------------- */
-        /* 🏠 2. MAIN APPLICATION VIEWS COMPONENT               */
-        /* ---------------------------------------------------- */
+        /* 🏠 2. MAIN APPLICATION VIEWS COMPONENT */
         .app-header {
             display: flex;
             justify-content: space-between;
@@ -116,7 +111,6 @@
         .view-content.active-view { display: block; }
         @keyframes viewFade { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Today Alert Info Card */
         .today-alert-box {
             background: #10141b;
             border: 1px dashed var(--border-color);
@@ -128,7 +122,6 @@
             font-weight: 500;
         }
 
-        /* Grid Metrik Rich Insight Dashboard */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -146,15 +139,15 @@
         .m-value { font-size: 18px; font-weight: 800; color: #fff; margin-top: 6px; }
         .m-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
 
-        /* ---------------------------------------------------- */
-        /* 🗓️ 3. CALENDAR CONTRIBUTION VIEW (DEDICATED PANEL)   */
-        /* ---------------------------------------------------- */
+        /* 🗓️ 3. CALENDAR CONTRIBUTION VIEW (RESPONSIVE FIX) */
         .calendar-wrap {
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 16px;
-            padding: 20px;
+            padding: 16px;
             margin-top: 10px;
+            box-sizing: border-box;
+            width: 100%;
         }
         .calendar-header { display: flex; align-items: center; justify-content: space-between; }
         .nav-arrow { background: transparent; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 5px 12px; border-radius: 6px; font-weight: bold; }
@@ -162,15 +155,33 @@
         .nav-arrow:not(:disabled):hover { color: #fff; background: var(--bg-input); }
         .calendar-header h3 { margin: 0; font-size: 16px; font-weight: 700; color: #fff; }
         
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 18px; }
-        .square { width: 100%; aspect-ratio: 1; background: #10141b; border: 1px solid #21262d; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #484f58; font-weight: 600; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 6px; 
+            margin-top: 18px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .square { 
+            width: auto; 
+            aspect-ratio: 1; 
+            background: #10141b; 
+            border: 1px solid #21262d; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px; 
+            color: #484f58; 
+            font-weight: 600; 
+            box-sizing: border-box;
+        }
         .square.active { background: var(--green-active); border-color: transparent; color: #fff; box-shadow: inset 0 0 4px rgba(255,255,255,0.2); }
         .square.today { border: 2px solid var(--blue-today); color: var(--blue-today); }
         .square.active.today { background: var(--green-active); border: 2px solid var(--blue-today); color: #fff; }
 
-        /* ---------------------------------------------------- */
-        /* 🦾 4. FLOATING ACTION BUTTON & BOTTOM NAVIGATION     */
-        /* ---------------------------------------------------- */
+        /* 🦾 4. FLOATING ACTION BUTTON & BOTTOM NAVIGATION */
         .bottom-nav-bar {
             position: fixed;
             bottom: 0;
@@ -206,7 +217,6 @@
         .nav-item.active-nav { color: var(--blue-today); }
         .nav-icon { font-size: 20px; margin-bottom: 4px; }
 
-        /* Floating Action Button (FAB) */
         .fab-btn {
             position: fixed;
             bottom: 35px;
@@ -231,9 +241,7 @@
         .fab-btn:active:not(:disabled) { transform: translateX(-50%) scale(0.95); }
         .fab-btn:disabled { background: var(--bg-input); border: 1px solid var(--border-color); color: #484f58; box-shadow: none; cursor: not-allowed; }
 
-        /* ---------------------------------------------------- */
-        /* 📋 5. NATIVE-STYLE BOTTOM SHEET COMPONENT            */
-        /* ---------------------------------------------------- */
+        /* 📋 5. NATIVE-STYLE BOTTOM SHEET COMPONENT */
         .bottom-sheet-backdrop {
             position: fixed;
             top: 0;
@@ -276,7 +284,7 @@
         button.main-btn { background: var(--green-active); color: white; border: none; padding: 15px; font-size: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 22px; }
         .secondary-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; margin-top: 10px; text-align: center; box-sizing: border-box; display: block; }
 
-        .version-tag { font-size: 10px; color: #30363d; margin: 25px 0 10px 0; text-align: center; font-weight: 600; letter-spacing: 0.5px; }
+        .version-tag { font-size: 11px; color: #484f58; margin-top: 30px; text-align: center; font-weight: 600; letter-spacing: 0.5px; }
         .toast { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background: var(--green-active); color: white; padding: 14px 28px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; white-space: nowrap; }
         .toast.show { top: 24px; }
         .hidden { display: none !important; }
@@ -306,24 +314,23 @@
                 <div class="profile-role">Klik untuk langsung masuk</div>
             </div>
         </div>
+        <!-- App version is now moved exclusively here -->
+        <div class="version-tag" id="app-version">v0.0.0</div>
     </div>
 
     <!-- MAIN APP APP-HEADER -->
     <div class="app-header">
         <div class="welcome-zone">
-            <h1 id="user-welcome">Halo, Ranger!</h1>
-            <p id="today-string-date">Selasa, 19 Mei 2026</p>
+            <h1 id="user-welcome">Halo!</h1>
+            <p id="today-string-date">Memuat tanggal...</p>
         </div>
         <button class="logout-btn" onclick="App.handleLogout()">Keluar</button>
     </div>
 
-    <!-- ---------------------------------------------------- -->
-    <!-- 🏠 TAB 1: VIEW HOME PANEL                            -->
-    <!-- ---------------------------------------------------- -->
+    <!-- 🏠 TAB 1: VIEW HOME PANEL -->
     <div id="view-home" class="view-content active-view">
         <div id="today-status-alert" class="today-alert-box">Mengambil status check-in...</div>
 
-        <!-- 2x3 Rich Metric Dashboard Grid Explorer -->
         <div class="metrics-grid">
             <div class="metric-card">
                 <div class="m-label">Streak Aktif</div>
@@ -332,7 +339,7 @@
             </div>
             <div class="metric-card">
                 <div class="m-label">Sesi Bulan Ini</div>
-                <div class="m-value" id="m-count">0 Kali</div>
+                <div class="m-value" id="m-count">0 Sesi</div>
                 <div class="m-sub">Frekuensi latihan harian.</div>
             </div>
             <div class="metric-card">
@@ -353,9 +360,7 @@
         </div>
     </div>
 
-    <!-- ---------------------------------------------------- -->
-    <!-- 🗓️ TAB 2: VIEW PROGRESS GRAPH PANEL                  -->
-    <!-- ---------------------------------------------------- -->
+    <!-- 🗓️ TAB 2: VIEW PROGRESS GRAPH PANEL -->
     <div id="view-progress" class="view-content">
         <div class="calendar-wrap">
             <div class="calendar-header">
@@ -380,8 +385,6 @@
             <div>Progres</div>
         </button>
     </div>
-
-    <div class="version-tag" id="app-version">v0.0.0</div>
 </div>
 
 <!-- 📋 NATIVE BOTTOM SHEET COMPONENT CONTAINER -->
@@ -399,13 +402,13 @@
         <label>Durasi Sesi Latihan (Menit)</label>
         <input type="number" id="input-duration" inputmode="numeric" placeholder="Contoh: 45">
     </div>
-    <button class="main-btn" onclick="App.submitCheckIn()">Simpan Laporan</button>
+    <!-- FIXED: Triggering correct javascript function handleCheckIn -->
+    <button class="main-btn" onclick="App.handleCheckIn()">Simpan Laporan</button>
     <button class="secondary-btn" onclick="App.closeBottomSheet()">Batal</button>
 </div>
 
 <div id="toast" class="toast">Notifikasi</div>
 
-<!-- ENGINE LOADER PIPELINE -->
 <script src="config.js"></script>
 <script src="api.js"></script>
 <script src="app.js"></script>

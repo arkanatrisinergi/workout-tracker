@@ -13,13 +13,11 @@ const DOM = {
     appVersion: document.getElementById('app-version'),
     toast: document.getElementById('toast'),
     
-    // Tabs Navigation Views
     viewHome: document.getElementById('view-home'),
     viewProgress: document.getElementById('view-progress'),
     navHome: document.getElementById('nav-home'),
     navprogress: document.getElementById('nav-progress'),
     
-    // Floating Action & Bottom Sheet Component Elements
     fabBtn: document.getElementById('fab-checkin-btn'),
     sheetBackdrop: document.getElementById('sheet-backdrop'),
     bottomSheet: document.getElementById('workout-bottom-sheet'),
@@ -27,14 +25,12 @@ const DOM = {
     inputTime: document.getElementById('input-time'),
     inputDuration: document.getElementById('input-duration'),
 
-    // Analytical Dash Dashboard Elements
     mStreak: document.getElementById('m-streak'),
     mCount: document.getElementById('m-count'),
     mDuration: document.getElementById('m-duration'),
     mAvg: document.getElementById('m-avg'),
     mPeakTime: document.getElementById('m-peak-time'),
     
-    // Calendar Layout Node Grid
     calendarTitle: document.getElementById('calendar-title'),
     calendarGrid: document.getElementById('calendar-grid'),
     prevMonthBtn: document.getElementById('prev-month'),
@@ -116,7 +112,6 @@ const App = {
         DOM.inputDate.value = todayStr;
         DOM.inputDate.max = todayStr;
         
-        // Ambil Jam Sekarang Otomatis (HH:MM)
         const now = new Date();
         DOM.inputTime.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
         
@@ -148,7 +143,6 @@ const App = {
         const targetMonth = new Date().getMonth();
         const targetYear = new Date().getFullYear();
 
-        // Filter data khusus user aktif di bulan berjalan saat ini
         const monthlyData = State.historyData.filter(entry => {
             const d = new Date(entry.workoutDate);
             return entry.userName === State.currentUser && 
@@ -156,23 +150,26 @@ const App = {
                    d.getFullYear() === targetYear;
         });
 
-        // 1. Total Frekuensi Latihan & Akumulasi Menit
         const sessionCount = monthlyData.length;
         const totalMins = monthlyData.reduce((sum, entry) => sum + (parseInt(entry.duration, 10) || 0), 0);
         
         DOM.mCount.innerText = `${sessionCount} Sesi`;
         DOM.mDuration.innerText = `${totalMins} mnt`;
 
-        // 2. Rata-Rata Durasi Sesi Latihan
         const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
-        // 3. Modus Jam Terfavorit Latihan (Peak Workout Time Engine Calculation)
+        // FIXED: Parsing regex cerdas untuk membersihkan tanggal purba Google Sheets 1899-12-29T
         const hoursList = monthlyData
-            .filter(entry => entry.workoutTime && entry.workoutTime.includes(':'))
+            .filter(entry => entry.workoutTime)
             .map(entry => {
-                const hour = entry.workoutTime.split(':')[0];
-                return `${hour.padStart(2, '0')}:00`; // Dibulatkan ke jam terdekat
+                let timeStr = String(entry.workoutTime);
+                // Jika mengandung format datetime lengkap '1899-12-29T23:00', ambil bagian jamnya saja
+                if (timeStr.includes('T')) {
+                    timeStr = timeStr.split('T')[1];
+                }
+                const hour = timeStr.split(':')[0];
+                return `${hour.padStart(2, '0')}:00`;
             });
 
         if (hoursList.length > 0) {
@@ -192,7 +189,6 @@ const App = {
             DOM.mPeakTime.innerText = `-- : --`;
         }
 
-        // 4. Perhitungan Akurasi Streak Aktif Berjalan
         const allCheckedDates = [...new Set(State.historyData
             .filter(entry => entry.userName === State.currentUser)
             .map(entry => entry.workoutDate.split('T')[0]))]
@@ -218,7 +214,6 @@ const App = {
         }
         DOM.mStreak.innerText = `🔥 ${streak} Hari`;
 
-        // 5. Validasi Status Lock Tombol FAB Hari Ini
         const checkedToday = allCheckedDates.includes(todayStr);
         if (checkedToday) {
             DOM.fabBtn.disabled = true;
@@ -246,7 +241,6 @@ const App = {
         
         DOM.calendarTitle.innerText = `${monthsInIndonesian[month]} ${year}`;
         
-        // Proteksi Validasi Masa Depan: Kunci tombol Next jika berada di bulan saat ini
         const realToday = new Date();
         if (year >= realToday.getFullYear() && month >= realToday.getMonth()) {
             DOM.nextMonthBtn.disabled = true;
@@ -280,7 +274,8 @@ const App = {
         }
     },
 
-    async submitCheckIn() {
+    // FIXED: Renamed function back to handleCheckIn to match index.html's onclick caller
+    async handleCheckIn() {
         const dateVal = DOM.inputDate.value;
         const timeVal = DOM.inputTime.value;
         const durationVal = DOM.inputDuration.value;
@@ -290,7 +285,7 @@ const App = {
             return;
         }
 
-        DOM.workoutBottomSheet.innerHTML = `<div style="text-align:center; padding: 40px 0;"><p style="color:var(--text-muted); font-style:italic;">Mengirim laporan ke satelit database...</p></div>`;
+        DOM.bottomSheet.innerHTML = `<div style="text-align:center; padding: 40px 0;"><p style="color:var(--text-muted); font-style:italic;">Mengirim laporan ke satelit database...</p></div>`;
         
         try {
             await ApiService.checkIn(State.currentUser, dateVal, timeVal, durationVal);
