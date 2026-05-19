@@ -1,12 +1,14 @@
 const State = {
     currentUser: localStorage.getItem('activeUser') || 'Suami',
     historyData: [],
-    currentViewDate: new Date() // Menyimpan konteks bulan yang sedang dilihat
+    currentViewDate: new Date()
 };
 
 const DOM = {
     actionZone: document.getElementById('action-zone'),
     questionZone: document.getElementById('question-zone'),
+    dashboardZone: document.getElementById('dashboard-view-zone'),
+    userSwitcherZone: document.getElementById('user-switcher-zone'),
     checkinBtn: document.getElementById('checkin-btn'),
     submitBtn: document.getElementById('submit-btn'),
     cancelBtn: document.getElementById('cancel-btn'),
@@ -39,25 +41,29 @@ const App = {
 
     showToast(message, isError = false) {
         DOM.toast.innerText = message;
-        DOM.toast.style.background = isError ? "#da3637" : "#238636";
+        DOM.toast.style.background = isError ? "#da3637" : "var(--green-active)";
         DOM.toast.classList.add('show');
         setTimeout(() => DOM.toast.classList.remove('show'), 3000);
     },
 
     setupEventListeners() {
         DOM.checkinBtn.addEventListener('click', () => {
-            // Set default tanggal form ke hari ini & batasi tanggal maksimal
             const todayStr = ApiService.getLocalDateString();
             DOM.inputDate.value = todayStr;
             DOM.inputDate.max = todayStr;
             
+            // UI UX Focus Mode: Sembunyikan dashboard dan pemilih user agar tidak penuh
             DOM.actionZone.classList.add('hidden');
+            DOM.dashboardZone.classList.add('hidden');
+            DOM.userSwitcherZone.classList.add('hidden');
             DOM.questionZone.classList.remove('hidden');
         });
 
         DOM.cancelBtn.addEventListener('click', () => {
             DOM.questionZone.classList.add('hidden');
             DOM.actionZone.classList.remove('hidden');
+            DOM.dashboardZone.classList.remove('hidden');
+            DOM.userSwitcherZone.classList.remove('hidden');
         });
 
         DOM.submitBtn.addEventListener('click', () => {
@@ -104,12 +110,12 @@ const App = {
             return;
         }
 
-        DOM.questionZone.innerHTML = `<p style="color:#8b949e; font-style:italic;">Menyimpan data laporan...</p>`;
+        DOM.questionZone.innerHTML = `<p style="color:var(--text-muted); font-style:italic; text-align:center; padding: 20px 0;">Menyimpan laporan ke sistem...</p>`;
         
         try {
             await ApiService.checkIn(State.currentUser, dateVal, timeVal, durationVal);
-            this.showToast(`Berhasil check-in untuk ${State.currentUser}!`);
-            setTimeout(() => location.reload(), 1500);
+            this.showToast(`Berhasil menyimpan latihan ${State.currentUser}!`);
+            setTimeout(() => location.reload(), 1200);
         } catch (err) {
             this.showToast('Gagal terhubung ke database.', true);
             console.error(err);
@@ -117,7 +123,7 @@ const App = {
     },
 
     async loadDashboard() {
-        DOM.calendarGrid.innerHTML = `<div style="grid-column: span 7; color: #666; font-size:14px; padding:20px 0;">Memuat grafik...</div>`;
+        DOM.calendarGrid.innerHTML = `<div style="grid-column: span 7; color: var(--text-muted); font-size:14px; padding:20px 0;">Memuat grafik kontribusi...</div>`;
         
         try {
             State.historyData = await ApiService.fetchHistory();
@@ -132,7 +138,6 @@ const App = {
         const targetMonth = State.currentViewDate.getMonth();
         const targetYear = State.currentViewDate.getFullYear();
 
-        // 1. Hitung Total Durasi Bulan Berjalan
         const totalMins = State.historyData
             .filter(entry => {
                 const d = new Date(entry.workoutDate);
@@ -144,11 +149,10 @@ const App = {
 
         DOM.durationMetric.innerText = `${totalMins} mnt`;
 
-        // 2. Hitung Streak Berjalan (Akurasi Tinggi Berdasarkan Urutan Tanggal)
         const allCheckedDates = [...new Set(State.historyData
             .filter(entry => entry.userName === State.currentUser)
             .map(entry => entry.workoutDate.split('T')[0]))]
-            .sort((a, b) => new Date(b) - new Date(a)); // Urutkan dari yang terbaru
+            .sort((a, b) => new Date(b) - new Date(a));
 
         let streak = 0;
         let todayStr = ApiService.getLocalDateString();
@@ -156,7 +160,6 @@ const App = {
         yesterday.setDate(yesterday.getDate() - 1);
         let yesterdayStr = yesterday.toLocaleDateString('sv-SE');
 
-        // Streak aktif jika ada check-in hari ini atau kemarin
         if (allCheckedDates.includes(todayStr) || allCheckedDates.includes(yesterdayStr)) {
             let currentCheckDate = allCheckedDates.includes(todayStr) ? new Date(todayStr) : new Date(yesterdayStr);
             
@@ -164,7 +167,7 @@ const App = {
                 const currentStr = currentCheckDate.toLocaleDateString('sv-SE');
                 if (allCheckedDates.includes(currentStr)) {
                     streak++;
-                    currentCheckDate.setDate(currentCheckDate.getDate() - 1); // Mundur 1 hari
+                    currentCheckDate.setDate(currentCheckDate.getDate() - 1);
                 } else {
                     break;
                 }
@@ -172,14 +175,10 @@ const App = {
         }
         DOM.streakMetric.innerText = `🔥 ${streak} Hari`;
 
-        // 3. Validasi Apakah Sudah Check-In Hari Ini
         const checkedToday = allCheckedDates.includes(todayStr);
         if (checkedToday) {
             DOM.checkinBtn.disabled = true;
             DOM.checkinBtn.innerText = "Sudah Check In Hari Ini ✓";
-            DOM.checkinBtn.style.background = "#30363d";
-            DOM.checkinBtn.style.color = "#8b949e";
-            DOM.checkinBtn.style.cursor = "not-allowed";
         }
     },
 
@@ -188,7 +187,7 @@ const App = {
         
         const monthsInIndonesian = [
             "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-            "Juli", "Agustus", "September", "Oktobers", "November", "Desember"
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
         ];
         
         const year = State.currentViewDate.getFullYear();
@@ -201,7 +200,6 @@ const App = {
         const todayDateNum = todayLocal.getDate();
         const isCurrentMonthView = todayLocal.getMonth() === month && todayLocal.getFullYear() === year;
 
-        // Ambil list tanggal latihan user pada bulan yang sedang dilihat
         const checkedDays = State.historyData
             .filter(entry => {
                 const d = new Date(entry.workoutDate);
@@ -216,12 +214,10 @@ const App = {
             square.classList.add('square');
             square.innerText = i;
             
-            // Highlight jika hari ini
             if (isCurrentMonthView && i === todayDateNum) {
                 square.classList.add('today');
             }
             
-            // Highlight jika sudah checked-in
             if (checkedDays.includes(i)) {
                 square.classList.add('active');
             }

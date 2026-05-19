@@ -5,58 +5,124 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Workout Tracker Kami</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .card { background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; width: 100%; max-width: 350px; position: relative; }
+        :root {
+            --bg-main: #0d1117;
+            --bg-card: #161b22;
+            --bg-input: #21262d;
+            --border-color: #30363d;
+            --text-muted: #8b949e;
+            --green-active: #238636;
+            --green-hover: #2ea043;
+            --blue-today: #58a6ff;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg-main); 
+            color: #fff; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px; 
+            box-sizing: border-box; 
+        }
+
+        .card { 
+            background: var(--bg-card); 
+            padding: 28px; 
+            border-radius: 16px; 
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5); 
+            text-align: center; 
+            width: 100%; 
+            max-width: 360px; 
+            position: relative;
+            transition: all 0.3s ease;
+        }
         
         /* User Selector Switch */
-        .user-selector { display: flex; background: #2d2d2d; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
-        .user-btn { flex: 1; background: transparent; color: #888; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; font-size: 14px; }
-        .user-btn.active { background: #30363d; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .user-selector { display: flex; background: #0d1117; border-radius: 10px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border-color); }
+        .user-btn { flex: 1; background: transparent; color: var(--text-muted); border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; font-size: 14px; }
+        .user-btn.active { background: var(--bg-input); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
-        button.main-btn { background: #238636; color: white; border: none; padding: 14px 24px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
-        button.main-btn:hover:not(:disabled) { background: #2ea043; }
-        .hidden { display: none; }
+        /* Main CTA Button */
+        button.main-btn { background: var(--green-active); color: white; border: none; padding: 16px 24px; font-size: 16px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(35, 134, 54, 0.2); }
+        button.main-btn:hover:not(:disabled) { background: var(--green-hover); transform: translateY(-1px); }
+        button.main-btn:active:not(:disabled) { transform: translateY(1px); }
+        button.main-btn:disabled { background: #21262d; color: #484f58; border: 1px solid var(--border-color); box-shadow: none; cursor: not-allowed; }
+
+        .hidden { display: none !important; }
         
-        /* Advanced Form Styling */
-        .input-group { margin-top: 15px; text-align: left; }
-        .input-group label { font-size: 12px; color: #8b949e; display: block; margin-bottom: 5px; margin-top: 10px; font-weight: 600;}
-        input { padding: 10px; width: 100%; border-radius: 6px; border: 1px solid #333; background: #2d2d2d; color: white; box-sizing: border-box; font-size: 15px;}
+        /* Advanced Form Animation Overlay Mode */
+        .form-container {
+            animation: fadeIn 0.25s ease-out;
+            text-align: left;
+        }
         
-        /* Analytics Header Display */
-        .analytics-container { display: flex; background: #161b22; border: 1px solid #30363d; border-radius: 8px; margin: 20px 0; padding: 10px 0;}
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-group { margin-top: 5px; }
+        .input-group label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 6px; margin-top: 14px; font-weight: 600; letter-spacing: 0.3px;}
+        
+        input { 
+            padding: 12px; 
+            width: 100%; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            background: var(--bg-input); 
+            color: white; 
+            box-sizing: border-box; 
+            font-size: 15px;
+            transition: border-color 0.2s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--blue-today);
+        }
+        
+        /* Analytics Dashboard Header */
+        .analytics-container { display: flex; background: #0d1117; border: 1px solid var(--border-color); border-radius: 12px; margin: 24px 0; padding: 12px 0;}
         .analytic-block { flex: 1; text-align: center; }
-        .analytic-block:first-child { border-right: 1px solid #30363d; }
-        .analytic-label { font-size: 11px; color: #8b949e; text-transform: uppercase; font-weight: bold; letter-spacing: 0.5px;}
-        .analytic-value { font-size: 16px; font-weight: bold; color: #fff; margin-top: 3px;}
+        .analytic-block:first-child { border-right: 1px solid var(--border-color); }
+        .analytic-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.8px;}
+        .analytic-value { font-size: 18px; font-weight: 800; color: #fff; margin-top: 4px;}
 
         /* Month Navigation Headers */
-        .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
-        .nav-arrow { background: transparent; border: none; color: #8b949e; font-size: 20px; cursor: pointer; padding: 0 10px; font-weight: bold;}
-        .nav-arrow:hover { color: #fff; }
-        h3 { margin: 0; font-size: 16px; }
+        .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; padding: 0 4px; }
+        .nav-arrow { background: transparent; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 5px 12px; border-radius: 6px; font-weight: bold; transition: all 0.2s;}
+        .nav-arrow:hover { color: #fff; background: var(--bg-input); }
+        h3 { margin: 0; font-size: 16px; font-weight: 700; }
         
-        /* Contribution Grid Area */
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 15px; min-height: 150px;}
-        .square { width: 100%; aspect-ratio: 1; background: #2d2d2d; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #666; box-sizing: border-box;}
-        .square.active { background: #238636; color: white; font-weight: bold; }
-        .square.today { border: 2px solid #58a6ff; color: #58a6ff; font-weight: bold; }
-        .square.active.today { background: #238636; border: 2px solid #58a6ff; color: white; }
+        /* Contribution Grid Area UI Refinement */
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 16px; min-height: 150px;}
+        .square { width: 100%; aspect-ratio: 1; background: #10141b; border: 1px solid #21262d; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #484f58; box-sizing: border-box; font-weight: 500; transition: all 0.2s; }
+        .square.active { background: var(--green-active); border-color: transparent; color: #fff; font-weight: 700; box-shadow: inset 0 0 4px rgba(255,255,255,0.2); }
+        .square.today { border: 2px solid var(--blue-today); color: var(--blue-today); font-weight: 700; }
+        .square.active.today { background: var(--green-active); border: 2px solid var(--blue-today); color: #fff; }
         
-        .secondary-btn { background: #30363d; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold; font-size: 14px;}
-        .secondary-btn:hover { background: #444c56; }
-        hr { border: 0; border-top: 1px solid #30363d; margin: 20px 0; }
-        .version-tag { font-size: 10px; color: #30363d; margin-top: 15px; text-align: center; font-weight: 600; }
+        .secondary-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .secondary-btn:hover { background: #21262d; color: #fff; border-color: #8b949e; }
         
-        /* Toast Notification System */
-        .toast { position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%); background: #238636; color: white; padding: 12px 24px; border-radius: 30px; font-size: 14px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: bottom 0.3s ease; z-index: 999; white-space: nowrap;}
-        .toast.show { bottom: 30px; }
+        hr { border: 0; border-top: 1px solid var(--border-color); margin: 24px 0; }
+        .version-tag { font-size: 10px; color: #30363d; margin-top: 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px; }
+        
+        /* Premium Toast Notification */
+        .toast { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background: var(--green-active); color: white; padding: 14px 28px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 999; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); }
+        .toast.show { top: 24px; }
     </style>
 </head>
 <body>
 
 <div class="card">
     <!-- Profile Selection Switch -->
-    <div class="user-selector">
+    <div class="user-selector" id="user-switcher-zone">
+<!--  KODE YANG BENAR (Sudah Bersih): -->
         <button class="user-btn" data-user="Suami" onclick="App.switchUser('Suami')">Suami</button>
         <button class="user-btn" data-user="Istri" onclick="App.switchUser('Istri')">Istri</button>
     </div>
@@ -66,44 +132,47 @@
         <button class="main-btn" id="checkin-btn">Check In Sekarang</button>
     </div>
 
-    <!-- Advanced Question State Container -->
-    <div id="question-zone" class="hidden">
+    <!-- Advanced Form Overlay (Fokus Mode) -->
+    <div id="question-zone" class="form-container hidden">
+        <h4 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 700;">Laporan Data Latihan</h4>
         <div class="input-group">
-            <label>Tanggal Workout</label>
+            <label>Tanggal Latihan</label>
             <input type="date" id="input-date">
             
-            <label>Jam Workout (Opsional)</label>
+            <label>Jam Mulai (Opsional)</label>
             <input type="time" id="input-time">
             
-            <label>Durasi Latihan (Opsional - Menit)</label>
-            <input type="number" id="input-duration" inputmode="numeric" placeholder="Contoh: 45">
+            <label>Durasi Sesi (Opsional - Menit)</label>
+            <input type="number" id="input-duration" inputmode="numeric" placeholder="Berapa menit? (Misal: 45)">
         </div>
-        <button class="main-btn" id="submit-btn" style="margin-top: 15px;">Simpan Laporan</button>
-        <button id="cancel-btn" class="secondary-btn" style="margin-top: 8px;">Kembali</button>
+        <button class="main-btn" id="submit-btn" style="margin-top: 20px;">Simpan Laporan</button>
+        <button id="cancel-btn" class="secondary-btn" style="margin-top: 10px;">Batal</button>
     </div>
 
     <!-- Analytics Dashboard Header -->
-    <div class="analytics-container">
-        <div class="analytic-block">
-            <div class="analytic-label">Streak Aktif</div>
-            <div class="analytic-value" id="streak-metric">🔥 0 Hari</div>
+    <div id="dashboard-view-zone">
+        <div class="analytics-container">
+            <div class="analytic-block">
+                <div class="analytic-label">Streak Aktif</div>
+                <div class="analytic-value" id="streak-metric">🔥 0 Hari</div>
+            </div>
+            <div class="analytic-block">
+                <div class="analytic-label">Total Bulan Ini</div>
+                <div class="analytic-value" id="duration-metric">0 mnt</div>
+            </div>
         </div>
-        <div class="analytic-block">
-            <div class="analytic-label">Total Durasi Bulan Ini</div>
-            <div class="analytic-value" id="duration-metric">0 mnt</div>
+
+        <hr style="margin: 20px 0;">
+
+        <!-- Month Navigation Component -->
+        <div class="calendar-header">
+            <button class="nav-arrow" id="prev-month">‹</button>
+            <h3 id="calendar-title">Memuat...</h3>
+            <button class="nav-arrow" id="next-month">›</button>
         </div>
+        
+        <div class="grid" id="calendar-grid"></div>
     </div>
-
-    <hr>
-
-    <!-- Month Navigation Component -->
-    <div class="calendar-header">
-        <button class="nav-arrow" id="prev-month">‹</button>
-        <h3 id="calendar-title">Memuat...</h3>
-        <button class="nav-arrow" id="next-month">›</button>
-    </div>
-    
-    <div class="grid" id="calendar-grid"></div>
     
     <div class="version-tag" id="app-version">v0.0.0</div>
 </div>
