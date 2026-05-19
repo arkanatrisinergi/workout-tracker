@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Our Workout Tracker</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: #1e1e1e; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); text-align: center; width: 100%; max-width: 340px; position: relative; }
+        
+        /* User Selector Switch */
+        .user-selector { display: flex; background: #2d2d2d; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+        .user-btn { flex: 1; background: transparent; color: #888; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+        .user-btn.active { background: #30363d; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
+        button.main-btn { background: #238636; color: white; border: none; padding: 14px 24px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s; }
+        button.main-btn:hover { background: #2ea043; }
+        .hidden { display: none; }
+        .input-group { margin-top: 15px; }
+        input { padding: 10px; width: 80%; border-radius: 6px; border: 1px solid #333; background: #2d2d2d; color: white; text-align: center; font-size: 16px; margin-bottom: 10px;}
+        
+        /* Contribution Grid Area */
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 20px; min-height: 150px;}
+        .square { width: 100%; aspect-ratio: 1; background: #2d2d2d; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #666; }
+        .square.active { background: #238636; color: white; font-weight: bold; }
+        
+        .secondary-btn { background: #30363d; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; width: 100%; font-weight: bold;}
+        .secondary-btn:hover { background: #444c56; }
+        hr { border: 0; border-top: 1px solid #30363d; margin: 25px 0; }
+        h3 { margin-bottom: 5px; }
+        .version-tag { font-size: 11px; color: #444c56; margin-top: 15px; text-align: center; font-weight: 500; }
+        .loading-text { color: #8b949e; font-style: italic; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <!-- Profile Selection Switch Components -->
+    <div class="user-selector">
+        <button class="user-btn" data-user="Husband" onclick="App.switchUser('Husband')">Husband</button>
+        <button class="user-btn" data-user="Wife" onclick="App.switchUser('Wife')">Wife</button>
+    </div>
+
+    <!-- Main Action State Container -->
+    <div id="action-zone">
+        <button class="main-btn" id="checkin-btn">Check In Today</button>
+    </div>
+
+    <!-- Question State Container -->
+    <div id="question-zone" class="hidden">
+        <p style="margin-top:0;">Want to log workout duration?</p>
+        <div class="input-group">
+            <input type="number" id="duration-input" inputmode="numeric" placeholder="Minutes (e.g., 45)">
+            <button class="main-btn" id="submit-time-btn">Save with Time</button>
+            <button id="skip-time-btn" class="secondary-btn" style="margin-top: 8px;">No, just Check In</button>
+        </div>
+    </div>
+
+    <hr>
+
+    <h3 id="calendar-title">Loading...</h3>
+    <div class="grid" id="calendar-grid"></div>
+    
+    <div class="version-tag" id="app-version">v0.0.0</div>
+</div>
+
+<!-- Architecture Script Engine Orchestration Pipeline -->
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
