@@ -3,7 +3,7 @@ const ApiService = {
      * Safely grabs local date formatted as YYYY-MM-DD
      */
     getLocalDateString() {
-        return new Date().toLocaleDateString('sv-SE'); // Outputs YYYY-MM-DD reliably
+        return new Date().toLocaleDateString('sv-SE'); // Outputs YYYY-MM-DD reliably in local time
     },
 
     /**
@@ -18,7 +18,7 @@ const ApiService = {
 
         const response = await fetch(APP_CONFIG.API_URL, {
             method: 'POST',
-            mode: 'no-cors', // Required for Google Script redirects
+            mode: 'no-cors', // Bypasses CORS browser security restrictions for writing data
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
