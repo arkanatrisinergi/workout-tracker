@@ -1,10 +1,9 @@
 /**
- * WORKOUT TRACKER CORE APPLICATION - VERSION 2.1.0
- * FITUR: DEPRECIATED FAVORITE TIME METRIC (CLEANUP) & FIXED INCOGNITO AUTH AUTO-LOGIN
+ * WORKOUT TRACKER CORE APPLICATION - VERSION 2.1.1
+ * FITUR: Full Script Sync, Total Removal of Peak Time Logic & Strict Incognito Auth Guard
  */
 
 const State = {
-    // Memastikan jika localStorage kosong (seperti di incognito), user WAJIB null
     currentUser: localStorage.getItem('activeUser') || null,
     currentTab: 'home',
     historyData: [],
@@ -34,13 +33,8 @@ const DOM = {
     mStreak: document.getElementById('m-streak'),
     mCount: document.getElementById('m-count'),
     mDuration: document.getElementById('m-duration'),
-    mAvg: document.getElementById('m-avg'),
-    mPeakTime: document.getElementById('m-peak-time'), // Tetap di-bind agar HTML tidak error, tetapi nilainya disembunyikan
-    
-    calendarTitle: document.getElementById('calendar-title'),
-    calendarGrid: document.getElementById('calendar-grid'),
-    prevMonthBtn: document.getElementById('prev-month'),
-    nextMonthBtn: document.getElementById('next-month')
+    mAvg: document.getElementById('m-avg')
+    // DOM mPeakTime telah dihapus total agar tidak meninggalkan sampah kode
 };
 
 const App = {
@@ -48,12 +42,12 @@ const App = {
         this.setupDateDisplay();
         this.setupEventListeners();
         
-        // Proteksi Ketat Layar Login
+        // Proteksi Ketat Layar Login Mode Incognito
         if (State.currentUser === null || State.currentUser === undefined || State.currentUser === "null") {
-            localStorage.removeItem('activeUser'); // Lap bersih jika ada string "null" tersimpan
+            localStorage.removeItem('activeUser');
             State.currentUser = null;
             DOM.loginOverlay.classList.remove('hidden');
-            DOM.loginOverlay.style.display = "flex"; // Memaksa overlay login muncul visualnya
+            DOM.loginOverlay.style.display = "flex";
         } else {
             DOM.loginOverlay.classList.add('hidden');
             DOM.loginOverlay.style.display = "none";
@@ -177,15 +171,6 @@ const App = {
 
         const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
         DOM.mAvg.innerText = `${avgMins} mnt`;
-
-        // ========================================================
-        // 🗑️ METRIK JAM FAVORIT DIHAPUS RESMI
-        // ========================================================
-        if (DOM.mPeakTime) {
-            DOM.mPeakTime.innerText = "Aktif"; // Menampilkan status statis agar kotak UI tidak melompong kosong
-            DOM.mPeakTime.style.color = "var(--green-active)";
-            // Opsional: Anda bisa mengubah teks ini menjadi info konstan lain seperti "Target Terjaga"
-        }
 
         // ========================================================
         // KALKULASI STREAK & STATUS CHECK-IN HARIAN
