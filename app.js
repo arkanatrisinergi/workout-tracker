@@ -103,7 +103,7 @@ const App = {
             DOM.viewHome.classList.remove('active-view');
             DOM.viewProgress.classList.add('active-view');
             DOM.navHome.classList.remove('active-nav');
-            DOM.navprogress.classList.add('active-nav');
+            DOM.navprogress.classList.remove('active-nav');
         }
     },
 
@@ -143,7 +143,6 @@ const App = {
         const targetMonth = new Date().getMonth();
         const targetYear = new Date().getFullYear();
 
-        // Filter baris data yang memiliki username dan tanggal valid
         const cleanHistory = State.historyData.filter(entry => entry && entry.userName && entry.workoutDate);
 
         const monthlyData = cleanHistory.filter(entry => {
@@ -162,13 +161,21 @@ const App = {
         const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
-        // Mengambil jam latihan secara akurat pasca-cleaning di api.js
+        // Ekstraksi Jam Terfavorit yang Toleran pasca perbaikan kolom
         const hoursList = monthlyData
-            .filter(entry => entry.workoutTime && entry.workoutTime !== "00:00")
+            .filter(entry => entry.workoutTime)
             .map(entry => {
-                const hourPart = entry.workoutTime.split(':')[0];
-                return `${hourPart.padStart(2, '0')}:00`;
-            });
+                let timeStr = String(entry.workoutTime).trim().replace('.', ':');
+                const match = timeStr.match(/^(\d{1,2})/);
+                if (match) {
+                    const hourNum = parseInt(match[1], 10);
+                    if (hourNum >= 0 && hourNum <= 23) {
+                        return `${String(hourNum).padStart(2, '0')}:00`;
+                    }
+                }
+                return null;
+            })
+            .filter(hr => hr !== null && hr !== "23:00");
 
         if (hoursList.length > 0) {
             const frequencyMap = {};
@@ -184,10 +191,21 @@ const App = {
             });
             DOM.mPeakTime.innerText = `${peakHour} WIB`;
         } else {
-            DOM.mPeakTime.innerText = `-- : --`;
+            // Fallback back-up jika pemfilteran mendeteksi anomali format
+            const rawHoursList = monthlyData
+                .map(entry => String(entry.workoutTime).split(':')[0])
+                .filter(hr => hr && !isNaN(hr));
+                
+            if (rawHoursList.length > 0) {
+                const hrObject = {};
+                rawHoursList.forEach(h => hrObject[h] = (hrObject[h] || 0) + 1);
+                const sorted = Object.keys(hrObject).sort((a,b) => hrObject[b] - hrObject[a]);
+                DOM.mPeakTime.innerText = `${sorted[0].padStart(2, '0')}:00 WIB`;
+            } else {
+                DOM.mPeakTime.innerText = `-- : --`;
+            }
         }
 
-        // Ambil list unik tanggal latihan khusus user aktif
         const allCheckedDates = [...new Set(cleanHistory
             .filter(entry => entry.userName === State.currentUser)
             .map(entry => {
@@ -233,7 +251,6 @@ const App = {
 
     renderCalendar() {
         DOM.calendarGrid.innerHTML = "";
-        
         const monthsInIndonesian = [
             "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
             "Juli", "Agustus", "September", "Oktober", "November", "Desember"
@@ -241,7 +258,6 @@ const App = {
         
         const year = State.currentViewDate.getFullYear();
         const month = State.currentViewDate.getMonth();
-        
         DOM.calendarTitle.innerText = `${monthsInIndonesian[month]} ${year}`;
         
         const realToday = new Date();
