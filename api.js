@@ -52,22 +52,23 @@ const ApiService = {
     },
 
     cleanGoogleSheetsTime(rawTime) {
-        if (!rawTime) return "00:00";
+        if (!rawTime) return "";
         let timeStr = String(rawTime).trim();
 
+        // Jika membawa format ISO utuh dari database
         if (timeStr.includes('T')) {
             timeStr = timeStr.split('T')[1];
         }
+        // Pisahkan spasi (AM/PM) jika ada
         timeStr = timeStr.split(' ')[0];
 
-        const parts = timeStr.split(':');
-        if (parts.length >= 2) {
-            const hours = parts[0].padStart(2, '0');
-            const minutes = parts[1].padStart(2, '0');
-            if (!isNaN(hours) && !isNaN(minutes)) {
-                return `${hours}:${minutes}`;
-            }
+        // Ekstraksi angka jam & menit secara absolut menggunakan Regex
+        const match = timeStr.match(/^(\d{1,2})[:.](\d{2})/);
+        if (match) {
+            const hours = match[1].padStart(2, '0');
+            const minutes = match[2];
+            return `${hours}:${minutes}`;
         }
-        return "00:00";
+        return timeStr;
     }
 };

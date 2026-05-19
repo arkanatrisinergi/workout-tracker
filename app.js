@@ -1,6 +1,6 @@
 /**
- * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.7
- * FITUR: Perbaikan Total Navigasi Stuck & Proteksi Sandbox pada Kalkulasi Jam Favorit
+ * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.8
+ * FITUR: Batas Minimum 3 Sesi Input untuk Membuka Jam Terfavorit (Progressive UX)
  */
 
 const State = {
@@ -66,13 +66,8 @@ const App = {
         DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
         DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
         
-        // 🚀 PERBAIKAN NAVIGASI: Pasang Event Listener Klik Menu Bawah
-        if (DOM.navHome) {
-            DOM.navHome.addEventListener('click', () => this.switchTab('home'));
-        }
-        if (DOM.navprogress) {
-            DOM.navprogress.addEventListener('click', () => this.switchTab('progress'));
-        }
+        if (DOM.navHome) DOM.navHome.addEventListener('click', () => this.switchTab('home'));
+        if (DOM.navprogress) DOM.navprogress.addEventListener('click', () => this.switchTab('progress'));
     },
 
     showToast(message, isError = false) {
@@ -148,7 +143,7 @@ const App = {
             this.calculateAdvancedMetrics();
             this.renderCalendar();
         } catch (err) {
-            console.error("Error global loadDashboardData:", err);
+            console.error(err);
             this.showToast("Gagal memuat histori data.", true);
         }
     },
@@ -176,61 +171,56 @@ const App = {
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
         // ========================================================
-        // 🚀 RESTRUKTURISASI AMAN (SANDBOX MODE): KALKULASI JAM FAVORIT
+        // 🚀 IMPLEMENTASI UX PROGRESSIVE: AMBANG BATAS JAM FAVORIT
         // ========================================================
-        DOM.mPeakTime.innerText = "--:--"; // Reset nilai awal aman
+        const MIN_SESSIONS_REQUIRED = 3; // Ubah ke 5 jika ingin batas lebih tinggi
 
-        try {
-            const hoursList = monthlyData
-                .filter(entry => entry.workoutTime)
-                .map(entry => {
-                    let timeStr = String(entry.workoutTime).trim().replace('.', ':');
-                    
-                    // Ambil angka depan sebelum tanda titik dua pertama (eg. "7:30:00" -> "7")
-                    const hourPart = timeStr.split(':')[0];
-                    
-                    if (hourPart !== "" && !isNaN(hourPart)) {
-                        const hourNum = parseInt(hourPart, 10);
-                        if (hourNum >= 0 && hourNum <= 23) {
-                            return `${String(hourNum).padStart(2, '0')}:00`;
-                        }
-                    }
-                    return null;
-                })
-                .filter(hr => hr !== null && hr !== "23:00" && hr !== "00:00");
-
-            if (hoursList.length > 0) {
-                const frequencyMap = {};
-                let maxFreq = 0;
-                let peakHour = "--:--";
-                
-                hoursList.forEach(hr => {
-                    frequencyMap[hr] = (frequencyMap[hr] || 0) + 1;
-                    if (frequencyMap[hr] > maxFreq) {
-                        maxFreq = frequencyMap[hr];
-                        peakHour = hr;
-                    }
-                });
-                DOM.mPeakTime.innerText = `${peakHour} WIB`;
-            } else {
-                // Jika tidak ada data jam yang cocok karena terfilter, cari manual tanpa batas sterilisasi ketat
-                const backupHours = monthlyData
+        if (sessionCount < MIN_SESSIONS_REQUIRED) {
+            const remaining = MIN_SESSIONS_REQUIRED - sessionCount;
+            DOM.mPeakTime.innerText = `Catat ${remaining}x lagi`;
+            DOM.mPeakTime.style.fontSize = "13px"; // Memperkecil font sedikit agar pas di kotak kartu
+            DOM.mPeakTime.style.color = "#a0aec0";
+        } else {
+            DOM.mPeakTime.style.fontSize = ""; // Kembalikan ke style dasar CSS
+            DOM.mPeakTime.style.color = "";
+            
+            try {
+                const hoursList = monthlyData
+                    .filter(entry => entry.workoutTime)
                     .map(entry => {
-                        const hp = String(entry.workoutTime).split(':')[0];
-                        return (hp && !isNaN(hp)) ? parseInt(hp, 10) : null;
+                        let timeStr = String(entry.workoutTime).trim().replace('.', ':');
+                        const hourPart = timeStr.split(':')[0];
+                        
+                        if (hourPart !== "" && !isNaN(hourPart)) {
+                            const hourNum = parseInt(hourPart, 10);
+                            if (hourNum >= 0 && hourNum <= 23) {
+                                return `${String(hourNum).padStart(2, '0')}:00`;
+                            }
+                        }
+                        return null;
                     })
-                    .filter(h => h !== null);
+                    .filter(hr => hr !== null && hr !== "23:00" && hr !== "00:00");
 
-                if (backupHours.length > 0) {
-                    const countObj = {};
-                    backupHours.forEach(h => countObj[h] = (countObj[h] || 0) + 1);
-                    const coreHour = Object.keys(countObj).sort((a,b) => countObj[b] - countObj[a])[0];
-                    DOM.mPeakTime.innerText = `${String(coreHour).padStart(2, '0')}:00 WIB`;
+                if (hoursList.length > 0) {
+                    const frequencyMap = {};
+                    let maxFreq = 0;
+                    let peakHour = "--:--";
+                    
+                    hoursList.forEach(hr => {
+                        frequencyMap[hr] = (frequencyMap[hr] || 0) + 1;
+                        if (frequencyMap[hr] > maxFreq) {
+                            maxFreq = frequencyMap[hr];
+                            peakHour = hr;
+                        }
+                    });
+                    DOM.mPeakTime.innerText = `${peakHour} WIB`;
+                } else {
+                    DOM.mPeakTime.innerText = "--:--";
                 }
+            } catch (err) {
+                console.error("Gagal kalkulasi jam terfavorit:", err);
+                DOM.mPeakTime.innerText = "--:--";
             }
-        } catch (peakTimeError) {
-            // Jika ada format data ekstrim tak terduga, log error ke console tanpa menghentikan aplikasi
-            console.error("Kalkulasi jam terfavorit error terlokalisasi:", peakTimeError);
         }
 
         // ========================================================
