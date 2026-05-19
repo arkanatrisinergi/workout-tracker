@@ -1,9 +1,10 @@
 /**
- * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.9
- * FITUR: Full Script Restore, Batas Minimum 3 Sesi, & Algoritma Jam Agnostik Toleransi Tinggi
+ * WORKOUT TRACKER CORE APPLICATION - VERSION 2.1.0
+ * FITUR: DEPRECIATED FAVORITE TIME METRIC (CLEANUP) & FIXED INCOGNITO AUTH AUTO-LOGIN
  */
 
 const State = {
+    // Memastikan jika localStorage kosong (seperti di incognito), user WAJIB null
     currentUser: localStorage.getItem('activeUser') || null,
     currentTab: 'home',
     historyData: [],
@@ -34,7 +35,7 @@ const DOM = {
     mCount: document.getElementById('m-count'),
     mDuration: document.getElementById('m-duration'),
     mAvg: document.getElementById('m-avg'),
-    mPeakTime: document.getElementById('m-peak-time'),
+    mPeakTime: document.getElementById('m-peak-time'), // Tetap di-bind agar HTML tidak error, tetapi nilainya disembunyikan
     
     calendarTitle: document.getElementById('calendar-title'),
     calendarGrid: document.getElementById('calendar-grid'),
@@ -47,10 +48,15 @@ const App = {
         this.setupDateDisplay();
         this.setupEventListeners();
         
-        if (!State.currentUser) {
+        // Proteksi Ketat Layar Login
+        if (State.currentUser === null || State.currentUser === undefined || State.currentUser === "null") {
+            localStorage.removeItem('activeUser'); // Lap bersih jika ada string "null" tersimpan
+            State.currentUser = null;
             DOM.loginOverlay.classList.remove('hidden');
+            DOM.loginOverlay.style.display = "flex"; // Memaksa overlay login muncul visualnya
         } else {
             DOM.loginOverlay.classList.add('hidden');
+            DOM.loginOverlay.style.display = "none";
             this.syncAppLaunch();
         }
     },
@@ -66,12 +72,8 @@ const App = {
         DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
         DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
         
-        if (DOM.navHome) {
-            DOM.navHome.addEventListener('click', () => this.switchTab('home'));
-        }
-        if (DOM.navprogress) {
-            DOM.navprogress.addEventListener('click', () => this.switchTab('progress'));
-        }
+        if (DOM.navHome) DOM.navHome.addEventListener('click', () => this.switchTab('home'));
+        if (DOM.navprogress) DOM.navprogress.addEventListener('click', () => this.switchTab('progress'));
     },
 
     showToast(message, isError = false) {
@@ -82,17 +84,19 @@ const App = {
     },
 
     handleLogin(user) {
+        if (!user) return;
         State.currentUser = user;
         localStorage.setItem('activeUser', user);
         DOM.loginOverlay.style.opacity = '0';
         setTimeout(() => {
             DOM.loginOverlay.classList.add('hidden');
+            DOM.loginOverlay.style.display = "none";
             this.syncAppLaunch();
         }, 300);
     },
 
     handleLogout() {
-        localStorage.removeItem('activeUser');
+        localStorage.clear();
         State.currentUser = null;
         location.reload();
     },
@@ -175,75 +179,12 @@ const App = {
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
         // ========================================================
-        // 🚀 JAM FAVORIT: ALGORITMA AGNOSTIK TOTAL (KEBAL FORMAT)
+        // 🗑️ METRIK JAM FAVORIT DIHAPUS RESMI
         // ========================================================
-        const MIN_SESSIONS_REQUIRED = 3; 
-
-        if (sessionCount < MIN_SESSIONS_REQUIRED) {
-            const remaining = MIN_SESSIONS_REQUIRED - sessionCount;
-            DOM.mPeakTime.innerText = `Catat ${remaining}x lagi`;
-            DOM.mPeakTime.style.fontSize = "13px";
-            DOM.mPeakTime.style.color = "#a0aec0";
-        } else {
-            DOM.mPeakTime.style.fontSize = ""; 
-            DOM.mPeakTime.style.color = "";
-            
-            try {
-                const hoursList = monthlyData
-                    .map(entry => {
-                        if (!entry.workoutTime) return null;
-                        
-                        let rawStr = String(entry.workoutTime).trim();
-                        
-                        // Jika formatnya ISO Date (cth: 1899-12-30T07:30:00) ambil serpihan waktu setelah huruf T
-                        if (rawStr.includes('T')) {
-                            rawStr = rawStr.split('T')[1];
-                        }
-
-                        // Deteksi pola jam umum menggunakan regex (cth: 07:30 atau 7.30)
-                        const matches = rawStr.match(/(\d{1,2})[:.](\d{2})/);
-                        
-                        if (matches && matches[1]) {
-                            const hr = parseInt(matches[1], 10);
-                            if (hr >= 0 && hr <= 23) {
-                                return `${String(hr).padStart(2, '0')}:00`;
-                            }
-                        }
-
-                        // Fallback Ekstrim jika format hancur tanpa tanda baca: Ambil angka terdepan langsung
-                        const directDigits = rawStr.match(/^\d{1,2}/);
-                        if (directDigits) {
-                            const hr = parseInt(directDigits[0], 10);
-                            if (hr >= 0 && hr <= 23) {
-                                return `${String(hr).padStart(2, '0')}:00`;
-                            }
-                        }
-                        
-                        return null;
-                    })
-                    .filter(hr => hr !== null);
-
-                if (hoursList.length > 0) {
-                    const frequencyMap = {};
-                    let maxFreq = 0;
-                    let peakHour = "--:--";
-                    
-                    hoursList.forEach(hr => {
-                        frequencyMap[hr] = (frequencyMap[hr] || 0) + 1;
-                        if (frequencyMap[hr] > maxFreq) {
-                            maxFreq = frequencyMap[hr];
-                            peakHour = hr;
-                        }
-                    });
-                    
-                    DOM.mPeakTime.innerText = `${peakHour} WIB`;
-                } else {
-                    DOM.mPeakTime.innerText = "--:--";
-                }
-            } catch (err) {
-                console.error("Gagal kalkulasi jam terfavorit:", err);
-                DOM.mPeakTime.innerText = "--:--";
-            }
+        if (DOM.mPeakTime) {
+            DOM.mPeakTime.innerText = "Aktif"; // Menampilkan status statis agar kotak UI tidak melompong kosong
+            DOM.mPeakTime.style.color = "var(--green-active)";
+            // Opsional: Anda bisa mengubah teks ini menjadi info konstan lain seperti "Target Terjaga"
         }
 
         // ========================================================
