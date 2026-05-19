@@ -3,602 +3,413 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Workout Tracker</title>
-    
-    <!-- EMBEDDED CORE STYLE SHEET (Menggantikan style.css) -->
+    <title>Workout Tracker Kami</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-color: #ffffff;
-            --text-muted: #a0aec0;
-            --border-color: #2d2d2d;
-            --green-active: #2e7d32;
-            --green-today: #4caf50;
-            --bottom-nav-bg: #1a1a1a;
+            --bg-main: #0d1117;
+            --bg-card: #161b22;
+            --bg-input: #21262d;
+            --border-color: #30363d;
+            --text-muted: #8b949e;
+            --green-active: #238636;
+            --green-hover: #2ea043;
+            --blue-today: #58a6ff;
+            --text-main: #c9d1d9;
         }
 
-        * {
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            background: var(--bg-main); 
+            color: var(--text-main); 
+            margin: 0; 
+            padding: 0; 
             box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
             display: flex;
             justify-content: center;
-            align-items: flex-start;
             min-height: 100vh;
-            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .app-container {
             width: 100%;
-            max-width: 480px;
-            min-height: 100vh;
-            background-color: #121212;
+            max-width: 412px;
+            background: var(--bg-main);
             position: relative;
-            padding-bottom: 90px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-bottom: 95px; 
+            box-sizing: border-box;
         }
 
-        /* HEADER */
+        /* 🚪 1. PASSWORDLESS LOGIN SCREEN */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 412px;
+            height: 100%;
+            background: var(--bg-main);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            box-sizing: border-box;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .login-title h2 { margin: 0; font-size: 26px; font-weight: 800; color: #fff; text-align: center; }
+        .login-title p { color: var(--text-muted); font-size: 14px; margin: 8px 0 40px 0; text-align: center; }
+
+        .profile-card {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .profile-card:hover { border-color: var(--text-muted); background: var(--bg-input); }
+        .profile-avatar { width: 50px; height: 50px; border-radius: 50px; background: #30363d; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 18px; }
+        .profile-info { text-align: left; }
+        .profile-name { font-size: 18px; font-weight: 700; color: #fff; }
+        .profile-role { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* 🏠 2. MAIN APPLICATION VIEWS COMPONENT */
         .app-header {
-            padding: 24px 20px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .header-top {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 4px;
+            padding: 24px 20px 10px 20px;
         }
-
-        .header-top h1 {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .btn-logout {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        #today-string-date {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 14px;
-        }
-
-        .status-alert {
-            padding: 12px;
-            border-radius: 12px;
+        .welcome-zone h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
+        .welcome-zone p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
+        
+        .logout-btn {
+            background: transparent;
             border: 1px solid var(--border-color);
-            font-size: 13px;
             color: var(--text-muted);
-            background-color: rgba(255,255,255,0.02);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover { color: #fff; background: #da3637; border-color: transparent; }
+
+        .view-content { padding: 0 20px; display: none; animation: viewFade 0.2s ease-in-out forwards; }
+        .view-content.active-view { display: block; }
+        @keyframes viewFade { from { opacity: 0; } to { opacity: 1; } }
+
+        .today-alert-box {
+            background: #10141b;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 15px;
             text-align: center;
+            font-size: 13px;
+            font-weight: 500;
         }
 
-        /* VIEWS CONTROL */
-        .app-view {
-            display: none;
-            padding: 20px;
-        }
-
-        .active-view {
-            display: block;
-        }
-
-        /* METRICS DASHBOARD */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 12px;
-            margin-bottom: 24px;
+            margin: 20px 0;
         }
-
         .metric-card {
-            background-color: var(--card-bg);
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            text-align: left;
+        }
+        .m-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; }
+        .m-value { font-size: 18px; font-weight: 800; color: #fff; margin-top: 6px; }
+        .m-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
+
+        /* 🗓️ 3. CALENDAR CONTRIBUTION VIEW */
+        .calendar-wrap {
+            background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 16px;
             padding: 16px;
-            position: relative;
+            margin-top: 10px;
+            box-sizing: border-box;
+            width: 100%;
         }
-
-        .card-icon {
-            font-size: 20px;
-            display: block;
-            margin-bottom: 8px;
+        .calendar-header { display: flex; align-items: center; justify-content: space-between; }
+        .nav-arrow { background: transparent; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 5px 12px; border-radius: 6px; font-weight: bold; }
+        .nav-arrow:disabled { color: #21262d; cursor: not-allowed; }
+        .nav-arrow:not(:disabled):hover { color: #fff; background: var(--bg-input); }
+        .calendar-header h3 { margin: 0; font-size: 16px; font-weight: 700; color: #fff; }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 6px; 
+            margin-top: 18px;
+            width: 100%;
+            box-sizing: border-box;
         }
-
-        .metric-card h3 {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 4px;
+        .square { 
+            width: auto; 
+            aspect-ratio: 1; 
+            background: #10141b; 
+            border: 1px solid #21262d; 
+            border-radius: 6px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px; 
+            color: #484f58; 
+            font-weight: 600; 
+            box-sizing: border-box;
         }
+        .square.active { background: var(--green-active); border-color: transparent; color: #fff; box-shadow: inset 0 0 4px rgba(255,255,255,0.2); }
+        .square.today { border: 2px solid var(--blue-today); color: var(--blue-today); }
+        .square.active.today { background: var(--green-active); border: 2px solid var(--blue-today); color: #fff; }
 
-        .metric-card p {
-            font-size: 20px;
-            font-weight: 700;
-        }
-
-        /* CALENDAR */
-        .calendar-section {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 16px;
-        }
-
-        .calendar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .calendar-header h2 {
-            font-size: 16px;
-            font-weight: 600;
-        }
-
-        .calendar-header button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 16px;
-            padding: 8px 12px;
-            cursor: pointer;
-        }
-
-        .calendar-header button:disabled {
-            opacity: 0.2;
-            cursor: not-allowed;
-        }
-
-        .calendar-days-label {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            text-align: center;
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 8px;
-            text-align: center;
-        }
-
-        .square {
-            aspect-ratio: 1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 13px;
-            font-weight: 500;
-            border-radius: 50%;
-            color: #fff;
-            position: relative;
-        }
-
-        .square.today {
-            border: 2px solid white;
-        }
-
-        .square.active {
-            background-color: var(--green-active);
-            font-weight: 700;
-        }
-
-        /* PROGRESS SHEET / LIST */
-        .history-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 16px;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: var(--text-muted);
-            padding: 40px 0;
-            font-size: 14px;
-        }
-
-        /* BOTTOM NAVIGATION (FIXED NO-JUMPING) */
-        .bottom-nav {
+        /* 🦾 4. FLOATING ACTION BUTTON & BOTTOM NAVIGATION */
+        .bottom-nav-bar {
             position: fixed;
             bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
             width: 100%;
-            max-width: 480px;
+            max-width: 412px;
             height: 70px;
-            background-color: var(--bottom-nav-bg);
+            background: #161b22f2;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border-top: 1px solid var(--border-color);
             display: flex;
             justify-content: space-around;
             align-items: center;
-            z-index: 99;
+            z-index: 900;
+            box-sizing: border-box;
+            padding: 0 30px;
         }
 
         .nav-item {
-            background: none;
-            border: none;
-            color: var(--text-muted);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            flex: 1;
-            height: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
             cursor: pointer;
+            transition: color 0.2s;
+            font-size: 11px;
+            font-weight: 600;
         }
+        .nav-item.active-nav { color: var(--blue-today); }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
 
-        .nav-icon {
-            font-size: 20px;
-            margin-bottom: 2px;
-        }
-
-        .nav-label {
-            font-size: 10px;
-            font-weight: 500;
-        }
-
-        .active-nav {
-            color: white !important;
-        }
-
-        .nav-fab-space {
-            width: 70px;
-            flex-shrink: 0;
-        }
-
-        /* FLOATING ACTION BUTTON (FAB) */
         .fab-btn {
             position: fixed;
-            bottom: 25px;
+            bottom: 35px;
             left: 50%;
             transform: translateX(-50%);
             width: 60px;
             height: 60px;
-            border-radius: 50%;
-            background-color: var(--green-today);
-            border: 4px solid var(--bg-color);
+            background: var(--green-active);
+            border-radius: 50px;
+            border: none;
+            box-shadow: 0 4px 16px rgba(35, 134, 54, 0.4);
             color: white;
-            font-size: 30px;
-            font-weight: 300;
+            font-size: 26px;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             cursor: pointer;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            z-index: 1000;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        .fab-btn:hover:not(:disabled) { background: var(--green-hover); transform: translateX(-50%) scale(1.05); }
+        .fab-btn:active:not(:disabled) { transform: translateX(-50%) scale(0.95); }
+        .fab-btn:disabled { background: var(--bg-input); border: 1px solid var(--border-color); color: #484f58; box-shadow: none; cursor: not-allowed; }
 
-        .fab-btn:disabled {
-            background-color: #333;
-            color: #666;
-            cursor: not-allowed;
-        }
-
-        /* BOTTOM SHEET SLIDE UP */
-        .sheet-backdrop {
+        /* 📋 5. NATIVE-STYLE BOTTOM SHEET COMPONENT */
+        .bottom-sheet-backdrop {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 998;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
             opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.25s ease;
+            visibility: hidden;
+            transition: all 0.3s ease;
         }
-
-        .sheet-backdrop.open {
-            opacity: 1;
-            pointer-events: auto;
-        }
+        .bottom-sheet-backdrop.open { opacity: 1; visibility: visible; }
 
         .bottom-sheet {
             position: fixed;
-            bottom: 0;
+            bottom: -100%;
             left: 50%;
-            transform: translate(-50%, 100%);
+            transform: translateX(-50%);
             width: 100%;
-            max-width: 480px;
-            background-color: #1c1c1e;
-            border-top-left-radius: 24px;
-            border-top-right-radius: 24px;
-            padding: 20px;
-            z-index: 999;
-            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 412px;
+            background: var(--bg-card);
+            border-radius: 24px 24px 0 0;
+            border-top: 1px solid var(--border-color);
+            padding: 24px;
+            box-sizing: border-box;
+            z-index: 2001;
+            transition: bottom 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            text-align: left;
         }
+        .bottom-sheet.open { bottom: 0; }
+        
+        .sheet-handle { width: 40px; height: 5px; background: #30363d; border-radius: 10px; margin: -10px auto 15px auto; }
+        .sheet-title { margin: 0 0 10px 0; font-size: 18px; font-weight: 700; color: #fff; }
 
-        .bottom-sheet.open {
-            transform: translate(-50%, 0);
-        }
+        .input-group label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; margin-top: 14px; font-weight: 600; letter-spacing: 0.3px;}
+        input { padding: 12px; width: 100%; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: white; box-sizing: border-box; font-size: 15px; }
+        input:focus { outline: none; border-color: var(--blue-today); }
 
-        .sheet-notch {
-            width: 40px;
-            height: 5px;
-            background-color: #444;
-            border-radius: 3px;
-            margin: 0 auto 15px auto;
-        }
+        button.main-btn { background: var(--green-active); color: white; border: none; padding: 15px; font-size: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 22px; }
+        .secondary-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; margin-top: 10px; text-align: center; box-sizing: border-box; display: block; }
 
-        .sheet-header h2 {
-            font-size: 18px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .form-group {
-            margin-bottom: 16px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            background-color: #2c2c2e;
-            border: 1px solid #3a3a3c;
-            border-radius: 12px;
-            color: white;
-            font-size: 15px;
-        }
-
-        .btn-submit-workout {
-            width: 100%;
-            padding: 14px;
-            background-color: var(--green-today);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-
-        /* AUTH LOGIN OVERLAY */
-        .login-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--bg-color);
-            z-index: 9999;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            transition: opacity 0.3s ease;
-        }
-
-        .login-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 30px 24px;
-            width: 100%;
-            max-width: 360px;
-            text-align: center;
-        }
-
-        .login-card h2 {
-            font-size: 20px;
-            margin-bottom: 8px;
-        }
-
-        .login-card p {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 24px;
-        }
-
-        .login-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .btn-profile {
-            padding: 14px;
-            border-radius: 14px;
-            border: 1px solid var(--border-color);
-            background-color: #262626;
-            color: white;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .btn-profile:active {
-            background-color: #333333;
-        }
-
-        /* TOAST */
-        .toast {
-            position: fixed;
-            bottom: 90px;
-            left: 50%;
-            transform: translate(-50%, 20px);
-            background: var(--green-active);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            opacity: 0;
-            pointer-events: none;
-            transition: transform 0.2s ease, opacity 0.2s ease;
-            z-index: 2000;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translate(-50%, 0);
-        }
+        .version-tag { font-size: 11px; color: #484f58; margin-top: 30px; text-align: center; font-weight: 600; letter-spacing: 0.5px; }
+        .toast { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background: var(--green-active); color: white; padding: 14px 28px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; white-space: nowrap; }
+        .toast.show { top: 24px; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- LOGIN OVERLAY -->
-    <div id="login-overlay" class="login-overlay">
-        <div class="login-card">
-            <h2>Siapa yang Berolahraga?</h2>
-            <p>Pilih profil Anda untuk menyinkronkan data latihan</p>
-            <div class="login-actions">
-                <button id="btn-login-suami" class="btn-profile">Suami</button>
-                <button id="btn-login-istri" class="btn-profile">Istri</button>
+<div class="app-container">
+
+    <!-- 1. LOGIN SCREEN OVERLAY -->
+    <div id="login-overlay" class="login-screen">
+        <div class="login-title">
+            <h2>Mulai Latihan</h2>
+            <p>Pilih akun profil Anda untuk melanjutkan</p>
+        </div>
+        <div class="profile-card" onclick="App.handleLogin('Suami')">
+            <div class="profile-avatar">👨🏽‍💻</div>
+            <div class="profile-info">
+                <div class="profile-name">Suami</div>
+                <div class="profile-role">Klik untuk langsung masuk</div>
             </div>
         </div>
+        <div class="profile-card" onclick="App.handleLogin('Istri')">
+            <div class="profile-avatar">👩🏻‍🍳</div>
+            <div class="profile-info">
+                <div class="profile-name">Istri</div>
+                <div class="profile-role">Klik untuk langsung masuk</div>
+            </div>
+        </div>
+        <div class="version-tag" id="app-version">v0.0.0</div>
     </div>
 
-    <!-- MAIN APP STRUCTURE -->
-    <div class="app-container">
-        
-        <!-- HEADER -->
-        <header class="app-header">
-            <div class="header-top">
-                <h1 id="user-welcome">Halo!</h1>
-                <button onclick="App.handleLogout()" class="btn-logout" title="Keluar Akun">✕</button>
-            </div>
+    <!-- MAIN APP APP-HEADER -->
+    <div class="app-header">
+        <div class="welcome-zone">
+            <h1 id="user-welcome">Halo!</h1>
             <p id="today-string-date">Memuat tanggal...</p>
-            <div id="today-status-alert" class="status-alert">Memeriksa status check-in...</div>
-        </header>
-
-        <!-- VIEW: HOME (DASHBOARD) -->
-        <main id="view-home" class="app-view active-view">
-            <section class="metrics-grid">
-                <div class="metric-card">
-                    <span class="card-icon">🔥</span>
-                    <h3>Streak</h3>
-                    <p id="m-streak">0 Hari</p>
-                </div>
-                <div class="metric-card">
-                    <span class="card-icon">📊</span>
-                    <h3>Total Sesi</h3>
-                    <p id="m-count">0 Sesi</p>
-                </div>
-                <div class="metric-card">
-                    <span class="card-icon">⏱️</span>
-                    <h3>Total Durasi</h3>
-                    <p id="m-duration">0 mnt</p>
-                </div>
-                <div class="metric-card">
-                    <span class="card-icon">⚡</span>
-                    <h3>Rata-rata</h3>
-                    <p id="m-avg">0 mnt</p>
-                </div>
-            </section>
-
-            <section class="calendar-section">
-                <div class="calendar-header">
-                    <button id="prev-month">◀</button>
-                    <h2 id="calendar-title">Memuat Bulan...</h2>
-                    <button id="next-month">▶</button>
-                </div>
-                <div class="calendar-days-label">
-                    <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
-                </div>
-                <div id="calendar-grid" class="calendar-grid"></div>
-            </section>
-        </main>
-
-        <!-- VIEW: PROGRESS -->
-        <main id="view-progress" class="app-view">
-            <section class="progress-section">
-                <h2>Riwayat Latihan Anda</h2>
-                <div id="history-list" class="history-list">
-                    <p class="empty-state">Fitur riwayat list siap digunakan.</p>
-                </div>
-            </section>
-        </main>
-
-        <!-- BOTTOM NAVIGATION BAR -->
-        <nav class="bottom-nav">
-            <button id="nav-home" class="nav-item active-nav">
-                <span class="nav-icon">🏠</span>
-                <span class="nav-label">Dasbor</span>
-            </button>
-            <div class="nav-fab-space"></div>
-            <button id="nav-progress" class="nav-item">
-                <span class="nav-icon">📈</span>
-                <span class="nav-label">Progres</span>
-            </button>
-        </nav>
-
-        <!-- FLOATING ACTION BUTTON (FAB) -->
-        <button id="fab-checkin-btn" class="fab-btn">+</button>
-
-        <!-- BOTTOM SHEET INPUT FORM -->
-        <div id="sheet-backdrop" class="sheet-backdrop" onclick="App.closeBottomSheet()"></div>
-        <div id="workout-bottom-sheet" class="bottom-sheet">
-            <div class="sheet-header">
-                <div class="sheet-notch"></div>
-                <h2>Catat Olahraga Hari Ini</h2>
-            </div>
-            <div class="sheet-body">
-                <form id="workout-form" onsubmit="event.preventDefault(); App.handleCheckIn();">
-                    <div class="form-group">
-                        <label for="input-date">Tanggal</label>
-                        <input type="date" id="input-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="input-time">Jam Mulai</label>
-                        <input type="time" id="input-time" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="input-duration">Durasi Latihan (Menit)</label>
-                        <input type="number" id="input-duration" min="1" max="180" value="30" required>
-                    </div>
-                    <button type="submit" class="btn-submit-workout">Simpan Sesi</button>
-                </form>
-            </div>
         </div>
-
-        <!-- TOAST NOTIFICATION -->
-        <div id="toast" class="toast">Notifikasi</div>
+        <button class="logout-btn" onclick="App.handleLogout()">Keluar</button>
     </div>
 
-    <!-- INJECT JAVASCRIPT CORE -->
-    <script src="config.js"></script>
-    <script src="api.js"></script>
-    <script src="app.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnSuami = document.getElementById('btn-login-suami');
-            const btnIstri = document.getElementById('btn-login-istri');
-            
-            if(btnSuami) {
-                btnSuami.addEventListener('click', () => App.handleLogin('Suami'));
-            }
-            if(btnIstri) {
-                btnIstri.addEventListener('click', () => App.handleLogin('Istri'));
-            }
-        });
-    </script>
+    <!-- 🏠 TAB 1: VIEW HOME PANEL -->
+    <div id="view-home" class="view-content active-view">
+        <div id="today-status-alert" class="today-alert-box">Mengambil status check-in...</div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="m-label">Streak Aktif</div>
+                <div class="m-value" id="m-streak">🔥 0 Hari</div>
+                <div class="m-sub">Pertahankan konsistensi!</div>
+            </div>
+            <div class="metric-card">
+                <div class="m-label">Sesi Bulan Ini</div>
+                <div class="m-value" id="m-count">0 Sesi</div>
+                <div class="m-sub">Frekuensi latihan harian.</div>
+            </div>
+            <div class="metric-card">
+                <div class="m-label">Total Durasi</div>
+                <div class="m-value" id="m-duration">0 mnt</div>
+                <div class="m-sub">Akumulasi waktu latihan.</div>
+            </div>
+            <div class="metric-card">
+                <div class="m-label">Rata-Rata Durasi</div>
+                <div class="m-value" id="m-avg">0 mnt</div>
+                <div class="m-sub">Per sesi olahraga.</div>
+            </div>
+            <div class="metric-card" style="grid-column: span 2;">
+                <div class="m-label">Waktu Terfavorit Latihan</div>
+                <div class="m-value" id="m-peak-time">-- : --</div>
+                <div class="m-sub">Jam paling sering Anda memulai olahraga.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🗓️ TAB 2: VIEW PROGRESS GRAPH PANEL -->
+    <div id="view-progress" class="view-content">
+        <div class="calendar-wrap">
+            <div class="calendar-header">
+                <button class="nav-arrow" id="prev-month">‹</button>
+                <h3 id="calendar-title">Memuat...</h3>
+                <button class="nav-arrow" id="next-month">›</button>
+            </div>
+            <div class="grid" id="calendar-grid"></div>
+        </div>
+    </div>
+
+    <!-- SYSTEM STICKY ACTIONS FOOTER METRICS -->
+    <button class="fab-btn" id="fab-checkin-btn">+</button>
+    
+    <div class="bottom-nav-bar">
+        <button class="nav-item active-nav" onclick="App.switchTab('home')" id="nav-home">
+            <div class="nav-icon">🏠</div>
+            <div>Beranda</div>
+        </button>
+        <button class="nav-item" onclick="App.switchTab('progress')" id="nav-progress">
+            <div class="nav-icon">🗓️</div>
+            <div>Progres</div>
+        </button>
+    </div>
+</div>
+
+<!-- 📋 NATIVE BOTTOM SHEET COMPONENT CONTAINER -->
+<div class="bottom-sheet-backdrop" id="sheet-backdrop" onclick="App.closeBottomSheet()"></div>
+<div class="bottom-sheet" id="workout-bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Catat Sesi Workout</div>
+    <div class="input-group">
+        <label>Tanggal Workout</label>
+        <input type="date" id="input-date">
+        
+        <label>Jam Mulai Latihan</label>
+        <input type="time" id="input-time">
+        
+        <label>Durasi Sesi Latihan (Menit)</label>
+        <input type="number" id="input-duration" inputmode="numeric" placeholder="Contoh: 45">
+    </div>
+    <!-- UPDATE COPY: Change text to "Check In" -->
+    <button class="main-btn" onclick="App.handleCheckIn()">Check In</button>
+    <button class="secondary-btn" onclick="App.closeBottomSheet()">Batal</button>
+</div>
+
+<div id="toast" class="toast">Notifikasi</div>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
