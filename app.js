@@ -143,7 +143,7 @@ const App = {
         const targetMonth = new Date().getMonth();
         const targetYear = new Date().getFullYear();
 
-        // VALIDASI PROTEKSI: Bersihkan baris aneh/kosong bawaan google sheets sebelum masuk kalkulasi
+        // Filter baris data yang memiliki username dan tanggal valid
         const cleanHistory = State.historyData.filter(entry => entry && entry.userName && entry.workoutDate);
 
         const monthlyData = cleanHistory.filter(entry => {
@@ -162,21 +162,13 @@ const App = {
         const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
-        // FILTER ANTI-1899: Mengisolasi jam favorit dari data rusak sistem Sheets
+        // Mengambil jam latihan secara akurat pasca-cleaning di api.js
         const hoursList = monthlyData
-            .filter(entry => entry.workoutTime)
+            .filter(entry => entry.workoutTime && entry.workoutTime !== "00:00")
             .map(entry => {
-                let timeStr = String(entry.workoutTime).trim();
-                if (timeStr.includes('T')) {
-                    timeStr = timeStr.split('T')[1];
-                }
-                const parts = timeStr.split(':');
-                if(parts.length >= 2) {
-                    return `${parts[0].padStart(2, '0')}:00`;
-                }
-                return null;
-            })
-            .filter(hr => hr !== null && hr !== "23:00"); // Mengabaikan nilai default error sistem
+                const hourPart = entry.workoutTime.split(':')[0];
+                return `${hourPart.padStart(2, '0')}:00`;
+            });
 
         if (hoursList.length > 0) {
             const frequencyMap = {};
@@ -195,9 +187,14 @@ const App = {
             DOM.mPeakTime.innerText = `-- : --`;
         }
 
+        // Ambil list unik tanggal latihan khusus user aktif
         const allCheckedDates = [...new Set(cleanHistory
             .filter(entry => entry.userName === State.currentUser)
-            .map(entry => entry.workoutDate.split('T')[0]))]
+            .map(entry => {
+                const d = new Date(entry.workoutDate);
+                return isNaN(d.getTime()) ? null : d.toLocaleDateString('sv-SE');
+            }))]
+            .filter(dateStr => dateStr !== null)
             .sort((a, b) => new Date(b) - new Date(a));
 
         let streak = 0;
@@ -291,7 +288,6 @@ const App = {
             return;
         }
 
-        // UPDATE COPY: Minimalist screen loading indicator
         DOM.bottomSheet.innerHTML = `<div style="text-align:center; padding: 40px 0;"><p style="color:white; font-weight:600;">Menyimpan...</p></div>`;
         
         try {
