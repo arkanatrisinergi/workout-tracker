@@ -1,6 +1,6 @@
 /**
- * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.8
- * FITUR: Batas Minimum 3 Sesi Input untuk Membuka Jam Terfavorit (Progressive UX)
+ * WORKOUT TRACKER CORE APPLICATION - VERSION 2.0.9
+ * FITUR: Full Script Restore, Batas Minimum 3 Sesi, & Algoritma Jam Agnostik Toleransi Tinggi
  */
 
 const State = {
@@ -66,8 +66,12 @@ const App = {
         DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
         DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
         
-        if (DOM.navHome) DOM.navHome.addEventListener('click', () => this.switchTab('home'));
-        if (DOM.navprogress) DOM.navprogress.addEventListener('click', () => this.switchTab('progress'));
+        if (DOM.navHome) {
+            DOM.navHome.addEventListener('click', () => this.switchTab('home'));
+        }
+        if (DOM.navprogress) {
+            DOM.navprogress.addEventListener('click', () => this.switchTab('progress'));
+        }
     },
 
     showToast(message, isError = false) {
@@ -143,7 +147,7 @@ const App = {
             this.calculateAdvancedMetrics();
             this.renderCalendar();
         } catch (err) {
-            console.error(err);
+            console.error("Error global loadDashboardData:", err);
             this.showToast("Gagal memuat histori data.", true);
         }
     },
@@ -171,35 +175,53 @@ const App = {
         DOM.mAvg.innerText = `${avgMins} mnt`;
 
         // ========================================================
-        // 🚀 IMPLEMENTASI UX PROGRESSIVE: AMBANG BATAS JAM FAVORIT
+        // 🚀 JAM FAVORIT: ALGORITMA AGNOSTIK TOTAL (KEBAL FORMAT)
         // ========================================================
-        const MIN_SESSIONS_REQUIRED = 3; // Ubah ke 5 jika ingin batas lebih tinggi
+        const MIN_SESSIONS_REQUIRED = 3; 
 
         if (sessionCount < MIN_SESSIONS_REQUIRED) {
             const remaining = MIN_SESSIONS_REQUIRED - sessionCount;
             DOM.mPeakTime.innerText = `Catat ${remaining}x lagi`;
-            DOM.mPeakTime.style.fontSize = "13px"; // Memperkecil font sedikit agar pas di kotak kartu
+            DOM.mPeakTime.style.fontSize = "13px";
             DOM.mPeakTime.style.color = "#a0aec0";
         } else {
-            DOM.mPeakTime.style.fontSize = ""; // Kembalikan ke style dasar CSS
+            DOM.mPeakTime.style.fontSize = ""; 
             DOM.mPeakTime.style.color = "";
             
             try {
                 const hoursList = monthlyData
-                    .filter(entry => entry.workoutTime)
                     .map(entry => {
-                        let timeStr = String(entry.workoutTime).trim().replace('.', ':');
-                        const hourPart = timeStr.split(':')[0];
+                        if (!entry.workoutTime) return null;
                         
-                        if (hourPart !== "" && !isNaN(hourPart)) {
-                            const hourNum = parseInt(hourPart, 10);
-                            if (hourNum >= 0 && hourNum <= 23) {
-                                return `${String(hourNum).padStart(2, '0')}:00`;
+                        let rawStr = String(entry.workoutTime).trim();
+                        
+                        // Jika formatnya ISO Date (cth: 1899-12-30T07:30:00) ambil serpihan waktu setelah huruf T
+                        if (rawStr.includes('T')) {
+                            rawStr = rawStr.split('T')[1];
+                        }
+
+                        // Deteksi pola jam umum menggunakan regex (cth: 07:30 atau 7.30)
+                        const matches = rawStr.match(/(\d{1,2})[:.](\d{2})/);
+                        
+                        if (matches && matches[1]) {
+                            const hr = parseInt(matches[1], 10);
+                            if (hr >= 0 && hr <= 23) {
+                                return `${String(hr).padStart(2, '0')}:00`;
                             }
                         }
+
+                        // Fallback Ekstrim jika format hancur tanpa tanda baca: Ambil angka terdepan langsung
+                        const directDigits = rawStr.match(/^\d{1,2}/);
+                        if (directDigits) {
+                            const hr = parseInt(directDigits[0], 10);
+                            if (hr >= 0 && hr <= 23) {
+                                return `${String(hr).padStart(2, '0')}:00`;
+                            }
+                        }
+                        
                         return null;
                     })
-                    .filter(hr => hr !== null && hr !== "23:00" && hr !== "00:00");
+                    .filter(hr => hr !== null);
 
                 if (hoursList.length > 0) {
                     const frequencyMap = {};
@@ -213,6 +235,7 @@ const App = {
                             peakHour = hr;
                         }
                     });
+                    
                     DOM.mPeakTime.innerText = `${peakHour} WIB`;
                 } else {
                     DOM.mPeakTime.innerText = "--:--";
