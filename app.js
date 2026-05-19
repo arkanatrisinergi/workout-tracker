@@ -1,42 +1,69 @@
 const State = {
-    currentUser: localStorage.getItem('activeUser') || 'Suami',
+    currentUser: localStorage.getItem('activeUser') || null,
+    currentTab: 'home',
     historyData: [],
     currentViewDate: new Date()
 };
 
 const DOM = {
-    actionZone: document.getElementById('action-zone'),
-    questionZone: document.getElementById('question-zone'),
-    dashboardZone: document.getElementById('dashboard-view-zone'),
-    userSwitcherZone: document.getElementById('user-switcher-zone'),
-    checkinBtn: document.getElementById('checkin-btn'),
-    submitBtn: document.getElementById('submit-btn'),
-    cancelBtn: document.getElementById('cancel-btn'),
+    loginOverlay: document.getElementById('login-overlay'),
+    userWelcome: document.getElementById('user-welcome'),
+    todayStringDate: document.getElementById('today-string-date'),
+    todayStatusAlert: document.getElementById('today-status-alert'),
+    appVersion: document.getElementById('app-version'),
+    toast: document.getElementById('toast'),
     
-    // Form Inputs
+    // Tabs Navigation Views
+    viewHome: document.getElementById('view-home'),
+    viewProgress: document.getElementById('view-progress'),
+    navHome: document.getElementById('nav-home'),
+    navprogress: document.getElementById('nav-progress'),
+    
+    // Floating Action & Bottom Sheet Component Elements
+    fabBtn: document.getElementById('fab-checkin-btn'),
+    sheetBackdrop: document.getElementById('sheet-backdrop'),
+    bottomSheet: document.getElementById('workout-bottom-sheet'),
     inputDate: document.getElementById('input-date'),
     inputTime: document.getElementById('input-time'),
     inputDuration: document.getElementById('input-duration'),
+
+    // Analytical Dash Dashboard Elements
+    mStreak: document.getElementById('m-streak'),
+    mCount: document.getElementById('m-count'),
+    mDuration: document.getElementById('m-duration'),
+    mAvg: document.getElementById('m-avg'),
+    mPeakTime: document.getElementById('m-peak-time'),
     
-    // Analytics & Navigation
-    streakMetric: document.getElementById('streak-metric'),
-    durationMetric: document.getElementById('duration-metric'),
+    // Calendar Layout Node Grid
     calendarTitle: document.getElementById('calendar-title'),
     calendarGrid: document.getElementById('calendar-grid'),
     prevMonthBtn: document.getElementById('prev-month'),
-    nextMonthBtn: document.getElementById('next-month'),
-    
-    // System
-    appVersion: document.getElementById('app-version'),
-    userButtons: document.querySelectorAll('.user-btn'),
-    toast: document.getElementById('toast')
+    nextMonthBtn: document.getElementById('next-month')
 };
 
 const App = {
     init() {
+        this.setupDateDisplay();
         this.setupEventListeners();
-        this.syncUserUI();
-        this.loadDashboard();
+        
+        if (!State.currentUser) {
+            DOM.loginOverlay.classList.remove('hidden');
+        } else {
+            DOM.loginOverlay.classList.add('hidden');
+            this.syncAppLaunch();
+        }
+    },
+
+    setupDateDisplay() {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        DOM.todayStringDate.innerText = new Date().toLocaleDateString('id-ID', options);
+        DOM.appVersion.innerText = `v${APP_CONFIG.VERSION} [${APP_CONFIG.ENV}]`;
+    },
+
+    setupEventListeners() {
+        DOM.fabBtn.addEventListener('click', () => this.openBottomSheet());
+        DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
+        DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
     },
 
     showToast(message, isError = false) {
@@ -46,109 +73,126 @@ const App = {
         setTimeout(() => DOM.toast.classList.remove('show'), 3000);
     },
 
-    setupEventListeners() {
-        DOM.checkinBtn.addEventListener('click', () => {
-            const todayStr = ApiService.getLocalDateString();
-            DOM.inputDate.value = todayStr;
-            DOM.inputDate.max = todayStr;
-            
-            // UI UX Focus Mode: Sembunyikan dashboard dan pemilih user agar tidak penuh
-            DOM.actionZone.classList.add('hidden');
-            DOM.dashboardZone.classList.add('hidden');
-            DOM.userSwitcherZone.classList.add('hidden');
-            DOM.questionZone.classList.remove('hidden');
-        });
-
-        DOM.cancelBtn.addEventListener('click', () => {
-            DOM.questionZone.classList.add('hidden');
-            DOM.actionZone.classList.remove('hidden');
-            DOM.dashboardZone.classList.remove('hidden');
-            DOM.userSwitcherZone.classList.remove('hidden');
-        });
-
-        DOM.submitBtn.addEventListener('click', () => {
-            this.handleCheckIn();
-        });
-
-        DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
-        DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
+    handleLogin(user) {
+        State.currentUser = user;
+        localStorage.setItem('activeUser', user);
+        DOM.loginOverlay.style.opacity = '0';
+        setTimeout(() => {
+            DOM.loginOverlay.classList.add('hidden');
+            this.syncAppLaunch();
+        }, 300);
     },
 
-    syncUserUI() {
-        DOM.userButtons.forEach(btn => {
-            if (btn.getAttribute('data-user') === State.currentUser) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-        DOM.appVersion.innerText = `v${APP_CONFIG.VERSION} [${APP_CONFIG.ENV}]`;
+    handleLogout() {
+        localStorage.removeItem('activeUser');
+        State.currentUser = null;
+        location.reload();
     },
 
-    switchUser(targetUser) {
-        if (State.currentUser === targetUser) return;
-        State.currentUser = targetUser;
-        localStorage.setItem('activeUser', targetUser);
-        this.syncUserUI();
-        this.calculateMetrics();
-        this.renderGrid();
+    syncAppLaunch() {
+        DOM.userWelcome.innerText = `Halo, ${State.currentUser}!`;
+        this.loadDashboardData();
+    },
+
+    switchTab(tabName) {
+        if (State.currentTab === tabName) return;
+        State.currentTab = tabName;
+        
+        if(tabName === 'home') {
+            DOM.viewHome.classList.add('active-view');
+            DOM.viewProgress.classList.remove('active-view');
+            DOM.navHome.classList.add('active-nav');
+            DOM.navprogress.classList.remove('active-nav');
+        } else {
+            DOM.viewHome.classList.remove('active-view');
+            DOM.viewProgress.classList.add('active-view');
+            DOM.navHome.classList.remove('active-nav');
+            DOM.navprogress.classList.add('active-nav');
+        }
+    },
+
+    openBottomSheet() {
+        const todayStr = ApiService.getLocalDateString();
+        DOM.inputDate.value = todayStr;
+        DOM.inputDate.max = todayStr;
+        
+        // Ambil Jam Sekarang Otomatis (HH:MM)
+        const now = new Date();
+        DOM.inputTime.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        DOM.sheetBackdrop.classList.add('open');
+        DOM.bottomSheet.classList.add('open');
+    },
+
+    closeBottomSheet() {
+        DOM.sheetBackdrop.classList.remove('open');
+        DOM.bottomSheet.classList.remove('open');
     },
 
     changeMonth(direction) {
         State.currentViewDate.setMonth(State.currentViewDate.getMonth() + direction);
-        this.calculateMetrics();
-        this.renderGrid();
+        this.renderCalendar();
     },
 
-    async handleCheckIn() {
-        const dateVal = DOM.inputDate.value;
-        const timeVal = DOM.inputTime.value;
-        const durationVal = DOM.inputDuration.value;
-
-        if(!dateVal) {
-            this.showToast("Tanggal wajib diisi!", true);
-            return;
-        }
-
-        DOM.questionZone.innerHTML = `<p style="color:var(--text-muted); font-style:italic; text-align:center; padding: 20px 0;">Menyimpan laporan ke sistem...</p>`;
-        
-        try {
-            await ApiService.checkIn(State.currentUser, dateVal, timeVal, durationVal);
-            this.showToast(`Berhasil menyimpan latihan ${State.currentUser}!`);
-            setTimeout(() => location.reload(), 1200);
-        } catch (err) {
-            this.showToast('Gagal terhubung ke database.', true);
-            console.error(err);
-        }
-    },
-
-    async loadDashboard() {
-        DOM.calendarGrid.innerHTML = `<div style="grid-column: span 7; color: var(--text-muted); font-size:14px; padding:20px 0;">Memuat grafik kontribusi...</div>`;
-        
+    async loadDashboardData() {
         try {
             State.historyData = await ApiService.fetchHistory();
-            this.calculateMetrics();
-            this.renderGrid();
+            this.calculateAdvancedMetrics();
+            this.renderCalendar();
         } catch (err) {
-            DOM.calendarGrid.innerHTML = `<div style="grid-column: span 7; color: #da3637; font-size:12px;">Gagal memuat histori latihan.</div>`;
+            this.showToast("Gagal memuat histori data.", true);
         }
     },
 
-    calculateMetrics() {
-        const targetMonth = State.currentViewDate.getMonth();
-        const targetYear = State.currentViewDate.getFullYear();
+    calculateAdvancedMetrics() {
+        const targetMonth = new Date().getMonth();
+        const targetYear = new Date().getFullYear();
 
-        const totalMins = State.historyData
-            .filter(entry => {
-                const d = new Date(entry.workoutDate);
-                return entry.userName === State.currentUser && 
-                       d.getMonth() === targetMonth && 
-                       d.getFullYear() === targetYear;
-            })
-            .reduce((sum, entry) => sum + (parseInt(entry.duration, 10) || 0), 0);
+        // Filter data khusus user aktif di bulan berjalan saat ini
+        const monthlyData = State.historyData.filter(entry => {
+            const d = new Date(entry.workoutDate);
+            return entry.userName === State.currentUser && 
+                   d.getMonth() === targetMonth && 
+                   d.getFullYear() === targetYear;
+        });
 
-        DOM.durationMetric.innerText = `${totalMins} mnt`;
+        // 1. Total Frekuensi Latihan & Akumulasi Menit
+        const sessionCount = monthlyData.length;
+        const totalMins = monthlyData.reduce((sum, entry) => sum + (parseInt(entry.duration, 10) || 0), 0);
+        
+        DOM.mCount.innerText = `${sessionCount} Sesi`;
+        DOM.mDuration.innerText = `${totalMins} mnt`;
 
+        // 2. Rata-Rata Durasi Sesi Latihan
+        const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
+        DOM.mAvg.innerText = `${avgMins} mnt`;
+
+        // 3. Modus Jam Terfavorit Latihan (Peak Workout Time Engine Calculation)
+        const hoursList = monthlyData
+            .filter(entry => entry.workoutTime && entry.workoutTime.includes(':'))
+            .map(entry => {
+                const hour = entry.workoutTime.split(':')[0];
+                return `${hour.padStart(2, '0')}:00`; // Dibulatkan ke jam terdekat
+            });
+
+        if (hoursList.length > 0) {
+            const frequencyMap = {};
+            let maxFreq = 0;
+            let peakHour = "-- : --";
+            
+            hoursList.forEach(hr => {
+                frequencyMap[hr] = (frequencyMap[hr] || 0) + 1;
+                if (frequencyMap[hr] > maxFreq) {
+                    maxFreq = frequencyMap[hr];
+                    peakHour = hr;
+                }
+            });
+            DOM.mPeakTime.innerText = `${peakHour} WIB`;
+        } else {
+            DOM.mPeakTime.innerText = `-- : --`;
+        }
+
+        // 4. Perhitungan Akurasi Streak Aktif Berjalan
         const allCheckedDates = [...new Set(State.historyData
             .filter(entry => entry.userName === State.currentUser)
             .map(entry => entry.workoutDate.split('T')[0]))]
@@ -162,7 +206,6 @@ const App = {
 
         if (allCheckedDates.includes(todayStr) || allCheckedDates.includes(yesterdayStr)) {
             let currentCheckDate = allCheckedDates.includes(todayStr) ? new Date(todayStr) : new Date(yesterdayStr);
-            
             while (true) {
                 const currentStr = currentCheckDate.toLocaleDateString('sv-SE');
                 if (allCheckedDates.includes(currentStr)) {
@@ -173,16 +216,24 @@ const App = {
                 }
             }
         }
-        DOM.streakMetric.innerText = `🔥 ${streak} Hari`;
+        DOM.mStreak.innerText = `🔥 ${streak} Hari`;
 
+        // 5. Validasi Status Lock Tombol FAB Hari Ini
         const checkedToday = allCheckedDates.includes(todayStr);
         if (checkedToday) {
-            DOM.checkinBtn.disabled = true;
-            DOM.checkinBtn.innerText = "Sudah Check In Hari Ini ✓";
+            DOM.fabBtn.disabled = true;
+            DOM.todayStatusAlert.innerText = "Sesi hari ini selesai! Istirahat yang cukup. 🙌🏼";
+            DOM.todayStatusAlert.style.borderColor = "var(--green-active)";
+            DOM.todayStatusAlert.style.color = "var(--green-today)";
+        } else {
+            DOM.fabBtn.disabled = false;
+            DOM.todayStatusAlert.innerText = "Anda belum berolahraga hari ini. Ketuk tombol + di bawah!";
+            DOM.todayStatusAlert.style.borderColor = "var(--border-color)";
+            DOM.todayStatusAlert.style.color = "var(--text-muted)";
         }
     },
 
-    renderGrid() {
+    renderCalendar() {
         DOM.calendarGrid.innerHTML = "";
         
         const monthsInIndonesian = [
@@ -195,17 +246,22 @@ const App = {
         
         DOM.calendarTitle.innerText = `${monthsInIndonesian[month]} ${year}`;
         
+        // Proteksi Validasi Masa Depan: Kunci tombol Next jika berada di bulan saat ini
+        const realToday = new Date();
+        if (year >= realToday.getFullYear() && month >= realToday.getMonth()) {
+            DOM.nextMonthBtn.disabled = true;
+        } else {
+            DOM.nextMonthBtn.disabled = false;
+        }
+
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const todayLocal = new Date();
-        const todayDateNum = todayLocal.getDate();
-        const isCurrentMonthView = todayLocal.getMonth() === month && todayLocal.getFullYear() === year;
+        const isCurrentMonthView = realToday.getMonth() === month && realToday.getFullYear() === year;
+        const todayDateNum = realToday.getDate();
 
         const checkedDays = State.historyData
             .filter(entry => {
                 const d = new Date(entry.workoutDate);
-                return entry.userName === State.currentUser && 
-                       d.getMonth() === month && 
-                       d.getFullYear() === year;
+                return entry.userName === State.currentUser && d.getMonth() === month && d.getFullYear() === year;
             })
             .map(entry => new Date(entry.workoutDate).getDate());
 
@@ -217,11 +273,32 @@ const App = {
             if (isCurrentMonthView && i === todayDateNum) {
                 square.classList.add('today');
             }
-            
             if (checkedDays.includes(i)) {
                 square.classList.add('active');
             }
             DOM.calendarGrid.appendChild(square);
+        }
+    },
+
+    async submitCheckIn() {
+        const dateVal = DOM.inputDate.value;
+        const timeVal = DOM.inputTime.value;
+        const durationVal = DOM.inputDuration.value;
+
+        if(!dateVal) {
+            this.showToast("Tanggal wajib diisi!", true);
+            return;
+        }
+
+        DOM.workoutBottomSheet.innerHTML = `<div style="text-align:center; padding: 40px 0;"><p style="color:var(--text-muted); font-style:italic;">Mengirim laporan ke satelit database...</p></div>`;
+        
+        try {
+            await ApiService.checkIn(State.currentUser, dateVal, timeVal, durationVal);
+            this.showToast(`Sukses mencatat olahraga Anda!`);
+            setTimeout(() => location.reload(), 1200);
+        } catch (err) {
+            this.showToast('Gagal terhubung ke server.', true);
+            console.error(err);
         }
     }
 };

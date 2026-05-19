@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Workout Tracker Kami</title>
     <style>
         :root {
@@ -14,176 +14,400 @@
             --green-active: #238636;
             --green-hover: #2ea043;
             --blue-today: #58a6ff;
+            --text-main: #c9d1d9;
         }
 
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             background: var(--bg-main); 
-            color: #fff; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 100vh; 
+            color: var(--text-main); 
             margin: 0; 
-            padding: 20px; 
-            box-sizing: border-box; 
+            padding: 0; 
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
 
-        .card { 
-            background: var(--bg-card); 
-            padding: 28px; 
-            border-radius: 16px; 
-            border: 1px solid var(--border-color);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5); 
-            text-align: center; 
-            width: 100%; 
-            max-width: 360px; 
+        /* App Container Wrapper to simulate App Viewport */
+        .app-container {
+            width: 100%;
+            max-width: 412px; /* Standard Modern Smartphone Width */
+            background: var(--bg-main);
             position: relative;
-            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            padding-bottom: 90px; /* Space for Bottom Nav and FAB */
+            box-sizing: border-box;
         }
-        
-        /* User Selector Switch */
-        .user-selector { display: flex; background: #0d1117; border-radius: 10px; padding: 4px; margin-bottom: 24px; border: 1px solid var(--border-color); }
-        .user-btn { flex: 1; background: transparent; color: var(--text-muted); border: none; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; font-size: 14px; }
-        .user-btn.active { background: var(--bg-input); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
 
-        /* Main CTA Button */
-        button.main-btn { background: var(--green-active); color: white; border: none; padding: 16px 24px; font-size: 16px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(35, 134, 54, 0.2); }
-        button.main-btn:hover:not(:disabled) { background: var(--green-hover); transform: translateY(-1px); }
-        button.main-btn:active:not(:disabled) { transform: translateY(1px); }
-        button.main-btn:disabled { background: #21262d; color: #484f58; border: 1px solid var(--border-color); box-shadow: none; cursor: not-allowed; }
+        /* ---------------------------------------------------- */
+        /* 🚪 1. PASSWORDLESS LOGIN SCREEN (OVERLAY LAYER)      */
+        /* ---------------------------------------------------- */
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 412px;
+            height: 100%;
+            background: var(--bg-main);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            box-sizing: border-box;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
 
-        .hidden { display: none !important; }
+        .login-title h2 { margin: 0; font-size: 26px; font-weight: 800; color: #fff; }
+        .login-title p { color: var(--text-muted); font-size: 14px; margin: 8px 0 40px 0; }
+
+        .profile-card {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+        }
+        .profile-card:hover { border-color: var(--text-muted); background: var(--bg-input); }
+        .profile-avatar { width: 50px; height: 50px; border-radius: 50px; background: #30363d; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 18px; }
+        .profile-info { text-align: left; }
+        .profile-name { font-size: 18px; font-weight: 700; color: #fff; }
+        .profile-role { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* ---------------------------------------------------- */
+        /* 🏠 2. MAIN APPLICATION VIEWS COMPONENT               */
+        /* ---------------------------------------------------- */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 20px 10px 20px;
+        }
+        .welcome-zone h1 { margin: 0; font-size: 22px; font-weight: 800; color: #fff; }
+        .welcome-zone p { margin: 4px 0 0 0; font-size: 13px; color: var(--text-muted); }
         
-        /* Advanced Form Animation Overlay Mode */
-        .form-container {
-            animation: fadeIn 0.25s ease-out;
+        .logout-btn {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .logout-btn:hover { color: #fff; background: #da3637; border-color: transparent; }
+
+        .view-content { padding: 0 20px; display: none; animation: viewFade 0.2s ease-in-out forwards; }
+        .view-content.active-view { display: block; }
+        @keyframes viewFade { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Today Alert Info Card */
+        .today-alert-box {
+            background: #10141b;
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 14px;
+            margin-top: 15px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Grid Metrik Rich Insight Dashboard */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
             text-align: left;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .m-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.8px; }
+        .m-value { font-size: 18px; font-weight: 800; color: #fff; margin-top: 6px; }
+        .m-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-style: italic; }
 
-        .input-group { margin-top: 5px; }
-        .input-group label { font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 6px; margin-top: 14px; font-weight: 600; letter-spacing: 0.3px;}
-        
-        input { 
-            padding: 12px; 
-            width: 100%; 
-            border-radius: 8px; 
-            border: 1px solid var(--border-color); 
-            background: var(--bg-input); 
-            color: white; 
-            box-sizing: border-box; 
-            font-size: 15px;
-            transition: border-color 0.2s ease;
+        /* ---------------------------------------------------- */
+        /* 🗓️ 3. CALENDAR CONTRIBUTION VIEW (DEDICATED PANEL)   */
+        /* ---------------------------------------------------- */
+        .calendar-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 10px;
         }
-        input:focus {
-            outline: none;
-            border-color: var(--blue-today);
-        }
+        .calendar-header { display: flex; align-items: center; justify-content: space-between; }
+        .nav-arrow { background: transparent; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 5px 12px; border-radius: 6px; font-weight: bold; }
+        .nav-arrow:disabled { color: #21262d; cursor: not-allowed; }
+        .nav-arrow:not(:disabled):hover { color: #fff; background: var(--bg-input); }
+        .calendar-header h3 { margin: 0; font-size: 16px; font-weight: 700; color: #fff; }
         
-        /* Analytics Dashboard Header */
-        .analytics-container { display: flex; background: #0d1117; border: 1px solid var(--border-color); border-radius: 12px; margin: 24px 0; padding: 12px 0;}
-        .analytic-block { flex: 1; text-align: center; }
-        .analytic-block:first-child { border-right: 1px solid var(--border-color); }
-        .analytic-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: bold; letter-spacing: 0.8px;}
-        .analytic-value { font-size: 18px; font-weight: 800; color: #fff; margin-top: 4px;}
-
-        /* Month Navigation Headers */
-        .calendar-header { display: flex; align-items: center; justify-content: space-between; margin-top: 5px; padding: 0 4px; }
-        .nav-arrow { background: transparent; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; padding: 5px 12px; border-radius: 6px; font-weight: bold; transition: all 0.2s;}
-        .nav-arrow:hover { color: #fff; background: var(--bg-input); }
-        h3 { margin: 0; font-size: 16px; font-weight: 700; }
-        
-        /* Contribution Grid Area UI Refinement */
-        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 16px; min-height: 150px;}
-        .square { width: 100%; aspect-ratio: 1; background: #10141b; border: 1px solid #21262d; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #484f58; box-sizing: border-box; font-weight: 500; transition: all 0.2s; }
-        .square.active { background: var(--green-active); border-color: transparent; color: #fff; font-weight: 700; box-shadow: inset 0 0 4px rgba(255,255,255,0.2); }
-        .square.today { border: 2px solid var(--blue-today); color: var(--blue-today); font-weight: 700; }
+        .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 18px; }
+        .square { width: 100%; aspect-ratio: 1; background: #10141b; border: 1px solid #21262d; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #484f58; font-weight: 600; }
+        .square.active { background: var(--green-active); border-color: transparent; color: #fff; box-shadow: inset 0 0 4px rgba(255,255,255,0.2); }
+        .square.today { border: 2px solid var(--blue-today); color: var(--blue-today); }
         .square.active.today { background: var(--green-active); border: 2px solid var(--blue-today); color: #fff; }
+
+        /* ---------------------------------------------------- */
+        /* 🦾 4. FLOATING ACTION BUTTON & BOTTOM NAVIGATION     */
+        /* ---------------------------------------------------- */
+        .bottom-nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 412px;
+            height: 70px;
+            background: #161b22f2;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 900;
+            box-sizing: border-box;
+            padding: 0 30px;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .nav-item.active-nav { color: var(--blue-today); }
+        .nav-icon { font-size: 20px; margin-bottom: 4px; }
+
+        /* Floating Action Button (FAB) */
+        .fab-btn {
+            position: fixed;
+            bottom: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: var(--green-active);
+            border-radius: 50px;
+            border: none;
+            box-shadow: 0 4px 16px rgba(35, 134, 54, 0.4);
+            color: white;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .fab-btn:hover:not(:disabled) { background: var(--green-hover); transform: translateX(-50%) scale(1.05); }
+        .fab-btn:active:not(:disabled) { transform: translateX(-50%) scale(0.95); }
+        .fab-btn:disabled { background: var(--bg-input); border: 1px solid var(--border-color); color: #484f58; box-shadow: none; cursor: not-allowed; }
+
+        /* ---------------------------------------------------- */
+        /* 📋 5. NATIVE-STYLE BOTTOM SHEET COMPONENT            */
+        /* ---------------------------------------------------- */
+        .bottom-sheet-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .bottom-sheet-backdrop.open { opacity: 1; visibility: visible; }
+
+        .bottom-sheet {
+            position: fixed;
+            bottom: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 412px;
+            background: var(--bg-card);
+            border-radius: 24px 24px 0 0;
+            border-top: 1px solid var(--border-color);
+            padding: 24px;
+            box-sizing: border-box;
+            z-index: 2001;
+            transition: bottom 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+            text-align: left;
+        }
+        .bottom-sheet.open { bottom: 0; }
         
-        .secondary-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        .secondary-btn:hover { background: #21262d; color: #fff; border-color: #8b949e; }
-        
-        hr { border: 0; border-top: 1px solid var(--border-color); margin: 24px 0; }
-        .version-tag { font-size: 10px; color: #30363d; margin-top: 20px; text-align: center; font-weight: 600; letter-spacing: 0.5px; }
-        
-        /* Premium Toast Notification */
-        .toast { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background: var(--green-active); color: white; padding: 14px 28px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 999; white-space: nowrap; border: 1px solid rgba(255,255,255,0.1); }
+        .sheet-handle { width: 40px; height: 5px; background: #30363d; border-radius: 10px; margin: -10px auto 15px auto; }
+        .sheet-title { margin: 0 0 10px 0; font-size: 18px; font-weight: 700; color: #fff; }
+
+        .input-group label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 6px; margin-top: 14px; font-weight: 600; letter-spacing: 0.3px;}
+        input { padding: 12px; width: 100%; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-input); color: white; box-sizing: border-box; font-size: 15px; }
+        input:focus { outline: none; border-color: var(--blue-today); }
+
+        button.main-btn { background: var(--green-active); color: white; border: none; padding: 15px; font-size: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 22px; }
+        .secondary-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border-color); padding: 12px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: 600; font-size: 14px; margin-top: 10px; text-align: center; box-sizing: border-box; display: block; }
+
+        .version-tag { font-size: 10px; color: #30363d; margin: 25px 0 10px 0; text-align: center; font-weight: 600; letter-spacing: 0.5px; }
+        .toast { position: fixed; top: -60px; left: 50%; transform: translateX(-50%); background: var(--green-active); color: white; padding: 14px 28px; border-radius: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 9999; white-space: nowrap; }
         .toast.show { top: 24px; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-<div class="card">
-    <!-- Profile Selection Switch -->
-    <div class="user-selector" id="user-switcher-zone">
-<!--  KODE YANG BENAR (Sudah Bersih): -->
-        <button class="user-btn" data-user="Suami" onclick="App.switchUser('Suami')">Suami</button>
-        <button class="user-btn" data-user="Istri" onclick="App.switchUser('Istri')">Istri</button>
-    </div>
+<div class="app-container">
 
-    <!-- Main Action State Container -->
-    <div id="action-zone">
-        <button class="main-btn" id="checkin-btn">Check In Sekarang</button>
-    </div>
-
-    <!-- Advanced Form Overlay (Fokus Mode) -->
-    <div id="question-zone" class="form-container hidden">
-        <h4 style="margin: 0 0 10px 0; font-size: 16px; font-weight: 700;">Laporan Data Latihan</h4>
-        <div class="input-group">
-            <label>Tanggal Latihan</label>
-            <input type="date" id="input-date">
-            
-            <label>Jam Mulai (Opsional)</label>
-            <input type="time" id="input-time">
-            
-            <label>Durasi Sesi (Opsional - Menit)</label>
-            <input type="number" id="input-duration" inputmode="numeric" placeholder="Berapa menit? (Misal: 45)">
+    <!-- 1. LOGIN SCREEN OVERLAY -->
+    <div id="login-overlay" class="login-screen">
+        <div class="login-title">
+            <h2>Mulai Latihan</h2>
+            <p>Pilih akun profil Anda untuk melanjutkan</p>
         </div>
-        <button class="main-btn" id="submit-btn" style="margin-top: 20px;">Simpan Laporan</button>
-        <button id="cancel-btn" class="secondary-btn" style="margin-top: 10px;">Batal</button>
-    </div>
-
-    <!-- Analytics Dashboard Header -->
-    <div id="dashboard-view-zone">
-        <div class="analytics-container">
-            <div class="analytic-block">
-                <div class="analytic-label">Streak Aktif</div>
-                <div class="analytic-value" id="streak-metric">🔥 0 Hari</div>
-            </div>
-            <div class="analytic-block">
-                <div class="analytic-label">Total Bulan Ini</div>
-                <div class="analytic-value" id="duration-metric">0 mnt</div>
+        <div class="profile-card" onclick="App.handleLogin('Suami')">
+            <div class="profile-avatar">👨🏽‍💻</div>
+            <div class="profile-info">
+                <div class="profile-name">Suami</div>
+                <div class="profile-role">Klik untuk langsung masuk</div>
             </div>
         </div>
-
-        <hr style="margin: 20px 0;">
-
-        <!-- Month Navigation Component -->
-        <div class="calendar-header">
-            <button class="nav-arrow" id="prev-month">‹</button>
-            <h3 id="calendar-title">Memuat...</h3>
-            <button class="nav-arrow" id="next-month">›</button>
+        <div class="profile-card" onclick="App.handleLogin('Istri')">
+            <div class="profile-avatar">👩🏻‍🍳</div>
+            <div class="profile-info">
+                <div class="profile-name">Istri</div>
+                <div class="profile-role">Klik untuk langsung masuk</div>
+            </div>
         </div>
-        
-        <div class="grid" id="calendar-grid"></div>
     </div>
+
+    <!-- MAIN APP APP-HEADER -->
+    <div class="app-header">
+        <div class="welcome-zone">
+            <h1 id="user-welcome">Halo, Ranger!</h1>
+            <p id="today-string-date">Selasa, 19 Mei 2026</p>
+        </div>
+        <button class="logout-btn" onclick="App.handleLogout()">Keluar</button>
+    </div>
+
+    <!-- ---------------------------------------------------- -->
+    /* 🏠 TAB 1: VIEW HOME PANEL                           */
+    <!-- ---------------------------------------------------- -->
+    <div id="view-home" class="view-content active-view">
+        <div id="today-status-alert" class="today-alert-box">Mengambil status check-in...</div>
+
+        <!-- 2x3 Rich Metric Dashboard Grid Explorer -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="m-label">Streak Aktif</div>
+                <div class="m-value" id="m-streak">🔥 0 Hari</div>
+                <div class="m-sub">Pertahankan konsistensi!</div>
+            </div>
+            <div class="metric-card">
+                <div class="m-label">Sesi Bulan Ini</div>
+                <div class="m-value" id="m-count">0 Kali</div>
+                <div class="m-sub">Frekuensi latihan harian.</div>
+            </div>
+            <div class="metric-card">
+                <div class="m-label">Total Durasi</div>
+                <div class="m-value" id="m-duration">0 mnt</div>
+                <div class="m-sub">Akumulasi waktu latihan.</div>
+            </div>
+            <div class="metric-card">
+                <div class="m-label">Rata-Rata Durasi</div>
+                <div class="m-value" id="m-avg">0 mnt</div>
+                <div class="m-sub">Per sesi olahraga.</div>
+            </div>
+            <div class="metric-card" style="grid-column: span 2;">
+                <div class="m-label">Waktu Terfavorit Latihan</div>
+                <div class="m-value" id="m-peak-time">-- : --</div>
+                <div class="m-sub">Jam paling sering Anda memulai olahraga.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ---------------------------------------------------- -->
+    /* 🗓️ TAB 2: VIEW PROGRESS GRAPH PANEL                   */
+    <!-- ---------------------------------------------------- -->
+    <div id="view-progress" class="view-content">
+        <div class="calendar-wrap">
+            <div class="calendar-header">
+                <button class="nav-arrow" id="prev-month">‹</button>
+                <h3 id="calendar-title">Memuat...</h3>
+                <button class="nav-arrow" id="next-month">›</button>
+            </div>
+            <div class="grid" id="calendar-grid"></div>
+        </div>
+    </div>
+
+    <!-- SYSTEM STICKY ACTIONS FOOTER METRICS -->
+    <button class="fab-btn" id="fab-checkin-btn">+</button>
     
+    <div class="bottom-nav-bar">
+        <button class="nav-item active-nav" onclick="App.switchTab('home')" id="nav-home">
+            <div class="nav-icon">🏠</div>
+            <div>Beranda</div>
+        </button>
+        <button class="nav-item" onclick="App.switchTab('progress')" id="nav-progress">
+            <div class="nav-icon">🗓️</div>
+            <div>Progres</div>
+        </button>
+    </div>
+
     <div class="version-tag" id="app-version">v0.0.0</div>
 </div>
 
-<!-- Toast Component Instance -->
+<!-- 📋 NATIVE BOTTOM SHEET COMPONENT CONTAINER -->
+<div class="bottom-sheet-backdrop" id="sheet-backdrop" onclick="App.closeBottomSheet()"></div>
+<div class="bottom-sheet" id="workout-bottom-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Catat Sesi Workout</div>
+    <div class="input-group">
+        <label>Tanggal Workout</label>
+        <input type="date" id="input-date">
+        
+        <label>Jam Mulai Latihan</label>
+        <input type="time" id="input-time">
+        
+        <label>Durasi Sesi Latihan (Menit)</label>
+        <input type="number" id="input-duration" inputmode="numeric" placeholder="Contoh: 45">
+    </div>
+    <button class="main-btn" onclick="App.submitCheckIn()">Simpan Laporan</button>
+    <button class="secondary-btn" onclick="App.closeBottomSheet()">Batal</button>
+</div>
+
 <div id="toast" class="toast">Notifikasi</div>
 
-<!-- Load Scripts Engine Pipeline -->
+<!-- ENGINE LOADER PIPELINE -->
 <script src="config.js"></script>
 <script src="api.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>
