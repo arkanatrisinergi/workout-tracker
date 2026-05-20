@@ -1,97 +1,266 @@
+/**
+ * WORKOUT TRACKER CORE APPLICATION - VERSION 2.1.1
+ * FITUR: FIX MOBILE SCROLL OVERFLOW & SYNC BOTTOM NAV TAB STATE CASE-SENSITIVITY
+ */
+
 const State = {
-    currentUser: localStorage.getItem('activeUser') || 'Suami',
+    currentUser: localStorage.getItem('activeUser') || null,
+    currentTab: 'home',
     historyData: [],
-    currentViewDate: new Date() // Menyimpan konteks bulan yang sedang dilihat
+    currentViewDate: new Date()
 };
 
 const DOM = {
-    actionZone: document.getElementById('action-zone'),
-    questionZone: document.getElementById('question-zone'),
-    checkinBtn: document.getElementById('checkin-btn'),
-    submitBtn: document.getElementById('submit-btn'),
-    cancelBtn: document.getElementById('cancel-btn'),
+    loginOverlay: document.getElementById('login-overlay'),
+    userWelcome: document.getElementById('user-welcome'),
+    todayStringDate: document.getElementById('today-string-date'),
+    todayStatusAlert: document.getElementById('today-status-alert'),
+    appVersion: document.getElementById('app-version'),
+    toast: document.getElementById('toast'),
     
-    // Form Inputs
+    viewHome: document.getElementById('view-home'),
+    viewProgress: document.getElementById('view-progress'),
+    navHome: document.getElementById('nav-home'),
+    navProgress: document.getElementById('nav-progress'), // Perbaikan Kapitalisasi Sinkronisasi (navProgress)
+    
+    fabBtn: document.getElementById('fab-checkin-btn'),
+    sheetBackdrop: document.getElementById('sheet-backdrop'),
+    bottomSheet: document.getElementById('workout-bottom-sheet'),
     inputDate: document.getElementById('input-date'),
     inputTime: document.getElementById('input-time'),
     inputDuration: document.getElementById('input-duration'),
+
+    mStreak: document.getElementById('m-streak'),
+    mCount: document.getElementById('m-count'),
+    mDuration: document.getElementById('m-duration'),
+    mAvg: document.getElementById('m-avg'),
     
-    // Analytics & Navigation
-    streakMetric: document.getElementById('streak-metric'),
-    durationMetric: document.getElementById('duration-metric'),
     calendarTitle: document.getElementById('calendar-title'),
     calendarGrid: document.getElementById('calendar-grid'),
     prevMonthBtn: document.getElementById('prev-month'),
-    nextMonthBtn: document.getElementById('next-month'),
-    
-    // System
-    appVersion: document.getElementById('app-version'),
-    userButtons: document.querySelectorAll('.user-btn'),
-    toast: document.getElementById('toast')
+    nextMonthBtn: document.getElementById('next-month')
 };
 
 const App = {
     init() {
+        this.setupDateDisplay();
         this.setupEventListeners();
-        this.syncUserUI();
-        this.loadDashboard();
+        
+        if (State.currentUser === null || State.currentUser === undefined || State.currentUser === "null") {
+            localStorage.removeItem('activeUser');
+            State.currentUser = null;
+            DOM.loginOverlay.classList.remove('hidden');
+            DOM.loginOverlay.style.display = "flex";
+        } else {
+            DOM.loginOverlay.classList.add('hidden');
+            DOM.loginOverlay.style.display = "none";
+            this.syncAppLaunch();
+        }
+    },
+
+    setupDateDisplay() {
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        DOM.todayStringDate.innerText = new Date().toLocaleDateString('id-ID', options);
+        DOM.appVersion.innerText = `v${APP_CONFIG.VERSION} [${APP_CONFIG.ENV}]`;
+    },
+
+    setupEventListeners() {
+        DOM.fabBtn.addEventListener('click', () => this.openBottomSheet());
+        DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
+        DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
+        
+        if (DOM.navHome) DOM.navHome.addEventListener('click', () => this.switchTab('home'));
+        if (DOM.navProgress) DOM.navProgress.addEventListener('click', () => this.switchTab('progress'));
     },
 
     showToast(message, isError = false) {
         DOM.toast.innerText = message;
-        DOM.toast.style.background = isError ? "#da3637" : "#238636";
+        DOM.toast.style.background = isError ? "#da3637" : "var(--green-active)";
         DOM.toast.classList.add('show');
         setTimeout(() => DOM.toast.classList.remove('show'), 3000);
     },
 
-    setupEventListeners() {
-        DOM.checkinBtn.addEventListener('click', () => {
-            // Set default tanggal form ke hari ini & batasi tanggal maksimal
-            const todayStr = ApiService.getLocalDateString();
-            DOM.inputDate.value = todayStr;
-            DOM.inputDate.max = todayStr;
-            
-            DOM.actionZone.classList.add('hidden');
-            DOM.questionZone.classList.remove('hidden');
-        });
-
-        DOM.cancelBtn.addEventListener('click', () => {
-            DOM.questionZone.classList.add('hidden');
-            DOM.actionZone.classList.remove('hidden');
-        });
-
-        DOM.submitBtn.addEventListener('click', () => {
-            this.handleCheckIn();
-        });
-
-        DOM.prevMonthBtn.addEventListener('click', () => this.changeMonth(-1));
-        DOM.nextMonthBtn.addEventListener('click', () => this.changeMonth(1));
+    handleLogin(user) {
+        if (!user) return;
+        State.currentUser = user;
+        localStorage.setItem('activeUser', user);
+        DOM.loginOverlay.style.opacity = '0';
+        setTimeout(() => {
+            DOM.loginOverlay.classList.add('hidden');
+            DOM.loginOverlay.style.display = "none";
+            this.syncAppLaunch();
+        }, 300);
     },
 
-    syncUserUI() {
-        DOM.userButtons.forEach(btn => {
-            if (btn.getAttribute('data-user') === State.currentUser) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-        DOM.appVersion.innerText = `v${APP_CONFIG.VERSION} [${APP_CONFIG.ENV}]`;
+    handleLogout() {
+        localStorage.clear();
+        State.currentUser = null;
+        location.reload();
     },
 
-    switchUser(targetUser) {
-        if (State.currentUser === targetUser) return;
-        State.currentUser = targetUser;
-        localStorage.setItem('activeUser', targetUser);
-        this.syncUserUI();
-        this.calculateMetrics();
-        this.renderGrid();
+    syncAppLaunch() {
+        DOM.userWelcome.innerText = `Halo, ${State.currentUser}!`;
+        this.loadDashboardData();
+    },
+
+    switchTab(tabName) {
+        if (State.currentTab === tabName) return;
+        State.currentTab = tabName;
+        
+        if (tabName === 'home') {
+            DOM.viewHome.classList.add('active-view');
+            DOM.viewProgress.classList.remove('active-view');
+            DOM.navHome.classList.add('active-nav');
+            if (DOM.navProgress) DOM.navProgress.classList.remove('active-nav');
+        } else {
+            DOM.viewHome.classList.remove('active-view');
+            DOM.viewProgress.classList.add('active-view');
+            DOM.navHome.classList.remove('active-nav');
+            if (DOM.navProgress) DOM.navProgress.classList.add('active-nav');
+        }
+    },
+
+    openBottomSheet() {
+        const todayStr = ApiService.getLocalDateString();
+        DOM.inputDate.value = todayStr;
+        DOM.inputDate.max = todayStr;
+        
+        const now = new Date();
+        DOM.inputTime.value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        
+        DOM.sheetBackdrop.classList.add('open');
+        DOM.bottomSheet.classList.add('open');
+    },
+
+    closeBottomSheet() {
+        DOM.sheetBackdrop.classList.remove('open');
+        DOM.bottomSheet.classList.remove('open');
     },
 
     changeMonth(direction) {
         State.currentViewDate.setMonth(State.currentViewDate.getMonth() + direction);
-        this.calculateMetrics();
-        this.renderGrid();
+        this.renderCalendar();
+    },
+
+    async loadDashboardData() {
+        try {
+            State.historyData = await ApiService.fetchHistory();
+            this.calculateAdvancedMetrics();
+            this.renderCalendar();
+        } catch (err) {
+            console.error("Error global loadDashboardData:", err);
+            this.showToast("Gagal memuat histori data.", true);
+        }
+    },
+
+    calculateAdvancedMetrics() {
+        const targetMonth = new Date().getMonth();
+        const targetYear = new Date().getFullYear();
+
+        const cleanHistory = State.historyData.filter(entry => entry && entry.userName && entry.workoutDate);
+
+        const monthlyData = cleanHistory.filter(entry => {
+            const d = new Date(entry.workoutDate);
+            return entry.userName === State.currentUser && 
+                   d.getMonth() === targetMonth && 
+                   d.getFullYear() === targetYear;
+        });
+
+        const sessionCount = monthlyData.length;
+        const totalMins = monthlyData.reduce((sum, entry) => sum + (parseInt(entry.duration, 10) || 0), 0);
+        
+        DOM.mCount.innerText = `${sessionCount} Sesi`;
+        DOM.mDuration.innerText = `${totalMins} mnt`;
+
+        const avgMins = sessionCount > 0 ? Math.round(totalMins / sessionCount) : 0;
+        DOM.mAvg.innerText = `${avgMins} mnt`;
+
+        const allCheckedDates = [...new Set(cleanHistory
+            .filter(entry => entry.userName === State.currentUser)
+            .map(entry => {
+                const d = new Date(entry.workoutDate);
+                return isNaN(d.getTime()) ? null : d.toLocaleDateString('sv-SE');
+            }))]
+            .filter(dateStr => dateStr !== null)
+            .sort((a, b) => new Date(b) - new Date(a));
+
+        let streak = 0;
+        let todayStr = ApiService.getLocalDateString();
+        let yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        let yesterdayStr = yesterday.toLocaleDateString('sv-SE');
+
+        if (allCheckedDates.includes(todayStr) || allCheckedDates.includes(yesterdayStr)) {
+            let currentCheckDate = allCheckedDates.includes(todayStr) ? new Date(todayStr) : new Date(yesterdayStr);
+            while (true) {
+                const currentStr = currentCheckDate.toLocaleDateString('sv-SE');
+                if (allCheckedDates.includes(currentStr)) {
+                    streak++;
+                    currentCheckDate.setDate(currentCheckDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+        }
+        DOM.mStreak.innerText = `🔥 ${streak} Hari`;
+
+        const checkedToday = allCheckedDates.includes(todayStr);
+        if (checkedToday) {
+            DOM.fabBtn.disabled = true;
+            DOM.todayStatusAlert.innerText = "Sesi hari ini selesai! Istirahat yang cukup. 🙌🏼";
+            DOM.todayStatusAlert.style.borderColor = "var(--green-active)";
+            DOM.todayStatusAlert.style.color = "var(--green-today)";
+        } else {
+            DOM.fabBtn.disabled = false;
+            DOM.todayStatusAlert.innerText = "Anda belum berolahraga hari ini. Ketuk tombol + di bawah!";
+            DOM.todayStatusAlert.style.borderColor = "var(--border-color)";
+            DOM.todayStatusAlert.style.color = "var(--text-muted)";
+        }
+    },
+
+    renderCalendar() {
+        DOM.calendarGrid.innerHTML = "";
+        const monthsInIndonesian = [
+            "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
+            "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+        ];
+        
+        const year = State.currentViewDate.getFullYear();
+        const month = State.currentViewDate.getMonth();
+        DOM.calendarTitle.innerText = `${monthsInIndonesian[month]} ${year}`;
+        
+        const realToday = new Date();
+        if (year >= realToday.getFullYear() && month >= realToday.getMonth()) {
+            DOM.nextMonthBtn.disabled = true;
+        } else {
+            DOM.nextMonthBtn.disabled = false;
+        }
+
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const isCurrentMonthView = realToday.getMonth() === month && realToday.getFullYear() === year;
+        const todayDateNum = realToday.getDate();
+
+        const checkedDays = State.historyData
+            .filter(entry => {
+                if(!entry || !entry.workoutDate) return false;
+                const d = new Date(entry.workoutDate);
+                return entry.userName === State.currentUser && d.getMonth() === month && d.getFullYear() === year;
+            })
+            .map(entry => new Date(entry.workoutDate).getDate());
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const square = document.createElement('div');
+            square.classList.add('square');
+            square.innerText = i;
+            
+            if (isCurrentMonthView && i === todayDateNum) {
+                square.classList.add('today');
+            }
+            if (checkedDays.includes(i)) {
+                square.classList.add('active');
+            }
+            DOM.calendarGrid.appendChild(square);
+        }
     },
 
     async handleCheckIn() {
@@ -104,128 +273,15 @@ const App = {
             return;
         }
 
-        DOM.questionZone.innerHTML = `<p style="color:#8b949e; font-style:italic;">Menyimpan data laporan...</p>`;
+        DOM.bottomSheet.innerHTML = `<div style="text-align:center; padding: 40px 0;"><p style="color:white; font-weight:600;">Menyimpan...</p></div>`;
         
         try {
             await ApiService.checkIn(State.currentUser, dateVal, timeVal, durationVal);
-            this.showToast(`Berhasil check-in untuk ${State.currentUser}!`);
-            setTimeout(() => location.reload(), 1500);
+            this.showToast(`Sukses mencatat olahraga Anda!`);
+            setTimeout(() => location.reload(), 1200);
         } catch (err) {
-            this.showToast('Gagal terhubung ke database.', true);
+            this.showToast('Gagal terhubung ke server.', true);
             console.error(err);
-        }
-    },
-
-    async loadDashboard() {
-        DOM.calendarGrid.innerHTML = `<div style="grid-column: span 7; color: #666; font-size:14px; padding:20px 0;">Memuat grafik...</div>`;
-        
-        try {
-            State.historyData = await ApiService.fetchHistory();
-            this.calculateMetrics();
-            this.renderGrid();
-        } catch (err) {
-            DOM.calendarGrid.innerHTML = `<div style="grid-column: span 7; color: #da3637; font-size:12px;">Gagal memuat histori latihan.</div>`;
-        }
-    },
-
-    calculateMetrics() {
-        const targetMonth = State.currentViewDate.getMonth();
-        const targetYear = State.currentViewDate.getFullYear();
-
-        // 1. Hitung Total Durasi Bulan Berjalan
-        const totalMins = State.historyData
-            .filter(entry => {
-                const d = new Date(entry.workoutDate);
-                return entry.userName === State.currentUser && 
-                       d.getMonth() === targetMonth && 
-                       d.getFullYear() === targetYear;
-            })
-            .reduce((sum, entry) => sum + (parseInt(entry.duration, 10) || 0), 0);
-
-        DOM.durationMetric.innerText = `${totalMins} mnt`;
-
-        // 2. Hitung Streak Berjalan (Akurasi Tinggi Berdasarkan Urutan Tanggal)
-        const allCheckedDates = [...new Set(State.historyData
-            .filter(entry => entry.userName === State.currentUser)
-            .map(entry => entry.workoutDate.split('T')[0]))]
-            .sort((a, b) => new Date(b) - new Date(a)); // Urutkan dari yang terbaru
-
-        let streak = 0;
-        let todayStr = ApiService.getLocalDateString();
-        let yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        let yesterdayStr = yesterday.toLocaleDateString('sv-SE');
-
-        // Streak aktif jika ada check-in hari ini atau kemarin
-        if (allCheckedDates.includes(todayStr) || allCheckedDates.includes(yesterdayStr)) {
-            let currentCheckDate = allCheckedDates.includes(todayStr) ? new Date(todayStr) : new Date(yesterdayStr);
-            
-            while (true) {
-                const currentStr = currentCheckDate.toLocaleDateString('sv-SE');
-                if (allCheckedDates.includes(currentStr)) {
-                    streak++;
-                    currentCheckDate.setDate(currentCheckDate.getDate() - 1); // Mundur 1 hari
-                } else {
-                    break;
-                }
-            }
-        }
-        DOM.streakMetric.innerText = `🔥 ${streak} Hari`;
-
-        // 3. Validasi Apakah Sudah Check-In Hari Ini
-        const checkedToday = allCheckedDates.includes(todayStr);
-        if (checkedToday) {
-            DOM.checkinBtn.disabled = true;
-            DOM.checkinBtn.innerText = "Sudah Check In Hari Ini ✓";
-            DOM.checkinBtn.style.background = "#30363d";
-            DOM.checkinBtn.style.color = "#8b949e";
-            DOM.checkinBtn.style.cursor = "not-allowed";
-        }
-    },
-
-    renderGrid() {
-        DOM.calendarGrid.innerHTML = "";
-        
-        const monthsInIndonesian = [
-            "Januari", "Februari", "Maret", "April", "Mei", "Juni", 
-            "Juli", "Agustus", "September", "Oktobers", "November", "Desember"
-        ];
-        
-        const year = State.currentViewDate.getFullYear();
-        const month = State.currentViewDate.getMonth();
-        
-        DOM.calendarTitle.innerText = `${monthsInIndonesian[month]} ${year}`;
-        
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const todayLocal = new Date();
-        const todayDateNum = todayLocal.getDate();
-        const isCurrentMonthView = todayLocal.getMonth() === month && todayLocal.getFullYear() === year;
-
-        // Ambil list tanggal latihan user pada bulan yang sedang dilihat
-        const checkedDays = State.historyData
-            .filter(entry => {
-                const d = new Date(entry.workoutDate);
-                return entry.userName === State.currentUser && 
-                       d.getMonth() === month && 
-                       d.getFullYear() === year;
-            })
-            .map(entry => new Date(entry.workoutDate).getDate());
-
-        for (let i = 1; i <= daysInMonth; i++) {
-            const square = document.createElement('div');
-            square.classList.add('square');
-            square.innerText = i;
-            
-            // Highlight jika hari ini
-            if (isCurrentMonthView && i === todayDateNum) {
-                square.classList.add('today');
-            }
-            
-            // Highlight jika sudah checked-in
-            if (checkedDays.includes(i)) {
-                square.classList.add('active');
-            }
-            DOM.calendarGrid.appendChild(square);
         }
     }
 };
