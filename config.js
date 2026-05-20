@@ -1,7 +1,5 @@
 const APP_CONFIG = {
-    // ⚠️ MASUKKAN URL APPS SCRIPT ANDA DI SINI
-    API_URL: "https://script.google.com/macros/s/AKfycby5QXKY1iqGnWusWxKBXthHlrlOJRjL8QvMmyuPqjkslwN7R7SMDOdF2s3DxFEzC06p/exec",
-    
-    VERSION: "1.2.0",
-    ENV: "DEV" // Ubah ke "PROD" jika sudah siap digunakan resmi
+    VERSION: "2.1.0",
+    ENV: "DEV",
+    API_URL: "https://script.google.com/macros/s/AKfycbz9g_tXIr936KrkSidZxZyaBNYaMb8V2D4ZIq6HFuv_2tSrA3RM7FhWb-SSkvXUUot6HA/exec" // Pastikan URL sesuai
 };
