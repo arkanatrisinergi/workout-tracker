@@ -1,17 +1,17 @@
 {
-    "short_name": "Workout",
-    "name": "Our Daily Workout Tracker",
-    "icons": [
-      {
-        "src": "https://cdn-icons-png.flaticon.com/512/3043/3043224.png",
-        "type": "image/png",
-        "sizes": "512x512",
-        "purpose": "any maskable"
-      }
-    ],
-    "start_url": "./index.html",
-    "background_color": "#121212",
-    "theme_color": "#1e1e1e",
-    "display": "standalone",
-    "orientation": "portrait"
-  }
+  "short_name": "Workouty",
+  "name": "Workouty Tracker",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3043/3043224.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#0d1117",
+  "theme_color": "#161b22",
+  "display": "standalone",
+  "orientation": "portrait"
+}
